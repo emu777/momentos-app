@@ -51,7 +51,30 @@ export default function RootLayout({
             { onConflict: 'user_id' }
           );
         if (error) { /* console.error... */ }
-      } catch (e) { /* console.error... */ }
+      } catch (e: unknown) { // ★ e の型は unknown のまま
+        let errorMessage = "レイアウトで不明なエラーが発生しました。";
+        let errorDetailsForLog: string | undefined = undefined;
+      
+        if (e instanceof Error) {
+          errorMessage = e.message;
+          errorDetailsForLog = e.stack || e.message;
+        } else if (typeof e === "string") {
+          errorMessage = e;
+          errorDetailsForLog = e;
+        } else {
+          try {
+            errorDetailsForLog = JSON.stringify(e);
+          } catch {
+            errorDetailsForLog = String(e);
+          }
+        }
+      
+        // ★★★ キャッチしたエラーオブジェクト 'e' (またはそこから抽出した情報) をログに出力 ★★★
+        console.error("Layout error caught:", errorMessage, "Details:", errorDetailsForLog, "Original error object:", e); 
+      
+        // 必要であれば、ユーザーにエラーを通知する処理（ただし、layout.tsx で直接UI変更は難しい）
+        // toast.error("アプリケーションの読み込み中にエラーが発生しました。"); // 例
+      }
     };
     updateUserOnlineStatus(true);
     const onlineIntervalId = setInterval(() => updateUserOnlineStatus(true), 60 * 1000); // ★ const に変更済みのはず

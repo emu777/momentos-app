@@ -4,8 +4,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Session, User } from '@supabase/supabase-js';
-import toast, { Toaster } from 'react-hot-toast'; // Toasterとtoastも使うのでインポートを確認
+import { Session, User } from '@supabase/supabase-js'; // Session と User をインポート
+import toast, { Toaster } from 'react-hot-toast';     // Toaster と toast をインポート
 
 interface ProfileFormData {
   nickname: string;
@@ -17,10 +17,8 @@ interface ProfileFormData {
 export default function ProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  
-  // ★★★ ESLintの警告をこの行に対して無効化 ★★★
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [session, setSession] = useState<Session | null>(null); 
+  const [session, setSession] = useState<Session | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<ProfileFormData>({
     nickname: '',
@@ -28,7 +26,7 @@ export default function ProfilePage() {
     residence: '',
     bio: '',
   });
-  const [isClientLoaded, setIsClientLoaded] = useState(false); // isClientLoaded も追加推奨
+  const [isClientLoaded, setIsClientLoaded] = useState(false);
 
   useEffect(() => {
     setIsClientLoaded(true);
@@ -37,67 +35,97 @@ export default function ProfilePage() {
   // 認証セッションの取得と現在のユーザー設定
   useEffect(() => {
     async function getSessionAndUser() {
-      if (!isClientLoaded) return; // クライアントロード後に実行
-      // setLoading(true); // fetchProfile の前に移動しても良い
+      if (!isClientLoaded) return;
+      // setLoading(true); // ここではまだ true にしないか、fetchProfileの前に移動
 
       const { data: { session: currentSessionData }, error } = await supabase.auth.getSession();
       if (error || !currentSessionData) {
         router.push('/auth/login');
-        // setLoading(false); // エラー時はここでローディング終了
+        setLoading(false); // エラー時はローディング終了
         return;
       }
       setSession(currentSessionData);
       setCurrentUser(currentSessionData.user);
-      // setLoading は fetchProfile が終わった後にまとめて false にする
+      // setLoading(false); // プロフィール取得後にローディングをまとめて解除するため、ここではまだ
     }
     getSessionAndUser();
-  }, [router, isClientLoaded]); // isClientLoaded を依存配列に追加
+  }, [router, isClientLoaded]);
+
 
   // プロフィールデータの取得
   useEffect(() => {
+    let isActive = true; // コンポーネントがマウントされているか追跡
+
     async function fetchProfile() {
-      if (!currentUser || !isClientLoaded) { // isClientLoaded もチェック
-        // currentUser がまだない、またはクライアントが準備できていない場合は、
-        // 初回プロフ取得は行わない（または setLoading(false) のみ行う）
-        if (isClientLoaded && !currentUser && !loading ) { // 既にロードが終わっていてcurrentUserがない場合
-             // (getSessionでリダイレクトされるはずだが念のため)
-        } else if (!isClientLoaded && !loading) {
-            //
-        } else {
-           // setLoading(false); // このケースではまだローディング中の可能性がある
+      if (!currentUser) {
+        if (isActive) {
+          setLoading(false); // currentUser がない場合はローディング終了
+          setFormData({ nickname: '', age: '', residence: '', bio: '' }); // フォームをクリア
         }
         return;
       }
       
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .single();
+      // setLoading(true); // ★ データを取得開始する直前に true にする
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          console.log('No profile found for user, form will be empty.');
-        } else {
-          console.error('Error fetching profile:', error);
-          toast.error('プロフィールの取得に失敗しました。');
+      console.log(`[ProfilePage] Fetching profile for user: ${currentUser.id}`);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .single();
+
+        if (!isActive) return; // アンマウントされていたらステートを更新しない
+
+        if (error) {
+          if (error.code === 'PGRST116') { // 行が見つからないのはエラーではない場合がある
+            console.log('No profile found for user, form will be empty for new profile.');
+            setFormData({ nickname: '', age: '', residence: '', bio: '' }); // 新規作成のためにフォームを空にする
+          } else {
+            console.error('Error fetching profile:', error);
+            toast.error('プロフィールの取得に失敗しました。');
+          }
+        } else if (data) {
+          setFormData({
+            nickname: data.nickname || '',
+            age: data.age === null || data.age === undefined ? '' : data.age,
+            residence: data.residence || '',
+            bio: data.bio || '',
+          });
         }
-      } else if (data) {
-        setFormData({
-          nickname: data.nickname || '',
-          age: data.age === null || data.age === undefined ? '' : data.age,
-          residence: data.residence || '',
-          bio: data.bio || '',
-        });
+      } catch (err) {
+        if (isActive) {
+          console.error("Exception in fetchProfile:", err);
+          toast.error("プロファイル取得中に予期せぬエラーが発生しました。");
+        }
+      } finally {
+        if (isActive) {
+          setLoading(false); // 処理完了（成功または失敗）後にローディング終了
+        }
       }
-      setLoading(false);
     }
 
-    if (isClientLoaded) { // クライアントサイドでマウントされてから実行
-        fetchProfile();
+    // isClientLoaded と currentUser が有効になったらプロフィールを取得
+    if (isClientLoaded && currentUser) {
+      // loading が true の場合（つまり、まだ取得していないか、再取得が必要な場合）のみ実行する、
+      // というよりは、currentUser が変わったタイミングで取得するのが一般的。
+      // この useEffect は currentUser が変わった時に実行される。
+      // 実行前に loading を true に設定し、fetchProfile内で最後にfalseにする。
+      setLoading(true); // ★ fetchProfile を呼び出す前にローディング開始
+      fetchProfile();
+    } else if (isClientLoaded && !currentUser) {
+      // ユーザーがいない（ログアウト後など）場合はローディングではない
+      if (isActive) setLoading(false);
+      setFormData({ nickname: '', age: '', residence: '', bio: '' }); // フォームをクリア
     }
-  }, [currentUser, isClientLoaded]); // isClientLoaded を依存配列に追加
+    
+    return () => {
+      isActive = false; // クリーンアップ時にフラグをfalseに
+    };
+  // ★★★ 依存配列に loading は含めず、currentUser と isClientLoaded にする ★★★
+  // loading を含めると、setLoading(true/false) のたびに再実行され無限ループになるため。
+  // フックの実行条件はフックの内部のif文で制御する。
+  }, [currentUser, isClientLoaded]); 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -120,23 +148,22 @@ export default function ProfilePage() {
     }
 
     setLoading(true);
+    const profileUpdates = {
+      user_id: currentUser.id,
+      nickname: formData.nickname.trim(),
+      age: formData.age === '' ? null : Number(formData.age),
+      residence: formData.residence.trim() || null,
+      bio: formData.bio.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
+
     const { error } = await supabase
       .from('profiles')
-      .upsert(
-        {
-          user_id: currentUser.id,
-          nickname: formData.nickname.trim(),
-          age: formData.age === '' ? null : Number(formData.age),
-          residence: formData.residence.trim(),
-          bio: formData.bio.trim(),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id' }
-      );
+      .upsert(profileUpdates, { onConflict: 'user_id' });
 
     if (error) {
       console.error('Error saving profile:', error);
-      toast.error('プロフィールの保存に失敗しました。');
+      toast.error(`プロフィールの保存に失敗: ${error.message}`);
     } else {
       toast.success('プロフィールを保存しました！');
       router.push('/');
@@ -144,11 +171,15 @@ export default function ProfilePage() {
     setLoading(false);
   };
 
-  if (!isClientLoaded || loading) { // isClientLoaded も考慮
+  // 最初のレンダリングやデータ取得前のローディング表示
+  if (!isClientLoaded || loading) { 
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <p className="text-xl font-semibold text-gray-700">読み込み中...</p>
-        {/* スピナー */}
+        <svg className="animate-spin h-8 w-8 text-indigo-600 ml-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
       </div>
     );
   }

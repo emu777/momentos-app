@@ -9,8 +9,9 @@ import toast, { Toaster } from 'react-hot-toast';
 import Image from 'next/image'; // ★ next/image をインポート
 
 // あなたの型定義ファイルからインポート (パスは実際の場所に合わせてください)
-import { Message, ChatRoomInfo, UserLeftPayload, Profile } from '../../../lib/types'; 
-
+import { Message, ChatRoomInfo, UserLeftPayload } from '../../../lib/types'; 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { Profile } from '../../../lib/types'; // 型のみのインポートとして明示
 // モーダルコンポーネントのインポート
 import PartnerLeftModal from '../../components/PartnerLeftModal';
 import MessageLogModal from '../../components/MessageLogModal';
