@@ -154,7 +154,7 @@ export default function ProfilePage() {
       age: formData.age === '' ? null : Number(formData.age),
       residence: formData.residence.trim() || null,
       bio: formData.bio.trim() || null,
-      updated_at: new Date().toISOString(),
+      //updated_at: new Date().toISOString(),
     };
 
     const { error } = await supabase
