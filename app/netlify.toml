@@ -1,0 +1,8 @@
+# netlify.toml (プロジェクトのルートに新規作成)
+
+[build]
+  command = "npm run build" # または "next build"
+  publish = ".next"         # Next.jsのビルド出力ディレクトリ
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
