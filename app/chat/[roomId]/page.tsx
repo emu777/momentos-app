@@ -1,16 +1,22 @@
 // app/chat/[roomId]/page.tsx
 'use client';
 
-import { useEffect, useState, useRef} from 'react';
+import { useEffect, useState, useRef } from 'react'; // useCallback を削除
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import toast, { Toaster } from 'react-hot-toast';
-import PartnerLeftModal from '../../components/PartnerLeftModal';
-import ConfirmLeaveChatModal from '../../components/ConfirmLeaveChatModal'; // 必要なら
-import MessageLogModal from '../../components/MessageLogModal';
-import { Message, ChatRoomInfo, UserLeftPayload, Profile } from '../../../lib/types'; // 型定義をインポート
 import Image from 'next/image'; // ★ next/image をインポート
+
+// あなたの型定義ファイルからインポート (パスは実際の場所に合わせてください)
+// Profile 型は Message 型の中で使用されているため、Message 型を正しく使っていれば Profile も間接的に使用されます。
+import { Message, ChatRoomInfo, UserLeftPayload, Profile } from '../../../lib/types'; 
+
+// モーダルコンポーネントのインポート (パスは実際の場所に合わせてください)
+import PartnerLeftModal from '../../components/PartnerLeftModal';
+import MessageLogModal from '../../components/MessageLogModal';
+import ConfirmLeaveChatModal from '../../components/ConfirmLeaveChatModal';
+
 
 export default function PrivateChatPage() {
   const router = useRouter();
@@ -32,8 +38,10 @@ export default function PrivateChatPage() {
   const [leavingPartnerNickname, setLeavingPartnerNickname] = useState<string>('');
   const [isConfirmLeaveModalOpen, setIsConfirmLeaveModalOpen] = useState(false);
 
-  
-  useEffect(() => { // 認証とルーム情報
+  const chatContainerRef = useRef<HTMLDivElement | null>(null); // ★ useRef はここで使用
+
+  // 認証とルーム情報取得
+  useEffect(() => {
     setLoading(true);
     async function checkAuthAndRoom() {
       const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
@@ -48,40 +56,39 @@ export default function PrivateChatPage() {
     checkAuthAndRoom();
   }, [router, roomId]);
 
-    // 相手ニックネーム取得
-    useEffect(() => {
-        if (chatRoomInfo && currentUser) {
-          const otherUserId = chatRoomInfo.user1_id === currentUser.id ? chatRoomInfo.user2_id : chatRoomInfo.user1_id;
-          if (otherUserId) {
-            supabase.from('profiles').select('nickname').eq('user_id', otherUserId).single()
-              .then(({ data, error }) => {
-                if (error && error.code !== 'PGRST116') {
-                  console.error('Error fetching other user nickname:', error);
-                  setOtherUserNickname('相手'); // エラー時もデフォルト値を設定
-                } else if (data) {
-                  setOtherUserNickname(data.nickname || '相手');
-                } else {
-                  setOtherUserNickname('相手'); // データがない場合もデフォルト値
-                }
-              });
-          }
-        }
-      }, [chatRoomInfo, currentUser]);
+  // 相手ニックネーム取得
+  useEffect(() => {
+    if (chatRoomInfo && currentUser) {
+      const otherUserId = chatRoomInfo.user1_id === currentUser.id ? chatRoomInfo.user2_id : chatRoomInfo.user1_id;
+      if (otherUserId) {
+        supabase.from('profiles').select('nickname').eq('user_id', otherUserId).single()
+          .then(({ data, error }) => {
+            if (error && error.code !== 'PGRST116') {
+              console.error('Error fetching other user nickname:', error);
+              setOtherUserNickname('相手');
+            } else if (data) {
+              setOtherUserNickname(data.nickname || '相手');
+            } else {
+              setOtherUserNickname('相手');
+            }
+          });
+      }
+    }
+  }, [chatRoomInfo, currentUser]);
 
- // メッセージ取得とリアルタイム更新 + 最新相手メッセージの更新
- useEffect(() => {
+  // メッセージ取得とリアルタイム更新 + 最新相手メッセージの更新
+  useEffect(() => {
     if (!currentUser || !chatRoomInfo || !roomId || !session) return;
     setLoading(true);
-
     const updateLatestOpponentMsg = (allMsgs: Message[]) => {
-      const opponentMsgs = allMsgs.filter(msg => msg.sender_id !== currentUser.id); // currentUser.id を使う
+      // currentUserがnullでないことは上でチェック済みなので、ここでは直接使う
+      const opponentMsgs = allMsgs.filter(msg => msg.sender_id !== currentUser!.id); 
       if (opponentMsgs.length > 0) {
         setLatestOpponentMessage(opponentMsgs[opponentMsgs.length - 1]);
       } else {
         setLatestOpponentMessage(null);
       }
     };
-
     async function fetchMessages() {
       const { data, error } = await supabase.from('messages').select('*, profiles(nickname)').eq('room_id', roomId).order('created_at', { ascending: true });
       if (error) {
@@ -96,8 +103,7 @@ export default function PrivateChatPage() {
       setLoading(false);
     }
     fetchMessages();
-
-    const messagesChannel = supabase.channel(`public_messages_in_room_${roomId}_v_final_fix`)
+    const messagesChannel = supabase.channel(`public_messages_in_room_${roomId}_v_final_linted`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}`},
         async (payload) => {
           const newMessagePayload = payload.new as Omit<Message, 'profiles'>;
@@ -105,7 +111,7 @@ export default function PrivateChatPage() {
           const fullNewMessage: Message = { ...newMessagePayload, profiles: profileError ? { nickname: '名無し' } : (profileData as {nickname: string | null} | null) };
           setMessages((prevMessages) => {
             const updatedMsgs = [...prevMessages, fullNewMessage];
-            updateLatestOpponentMsg(updatedMsgs); // 新規メッセージ受信時も最新メッセージを更新
+            updateLatestOpponentMsg(updatedMsgs);
             return updatedMsgs;
           });
         }
@@ -113,7 +119,12 @@ export default function PrivateChatPage() {
     return () => { supabase.removeChannel(messagesChannel); };
   }, [currentUser, chatRoomInfo, roomId, session]);
   
-  
+  // 自動スクロール
+  useEffect(() => {
+    if (chatContainerRef.current) { // ★ useRef を使用
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   // 相手退出検知リスナー
   useEffect(() => {
@@ -123,7 +134,7 @@ export default function PrivateChatPage() {
     const roomNotificationChannel = supabase.channel(roomNotificationChannelName, { config: { broadcast: { ack: true } } });
     roomNotificationChannel.on('broadcast', { event: 'user_left_room' }, (message) => {
       const payload = message.payload as UserLeftPayload;
-      // currentUser が null でないことを再度確認
+      // currentUser が null でないことを再度確認 (非同期コールバック内なので)
       if (payload && payload.userIdWhoLeft && currentUser && payload.userIdWhoLeft !== currentUser.id) {
         const nicknameToDisplay = payload.nicknameWhoLeft || otherUserNickname || '相手';
         setLeavingPartnerNickname(nicknameToDisplay);
@@ -133,6 +144,7 @@ export default function PrivateChatPage() {
     return () => { supabase.removeChannel(roomNotificationChannel); };
   }, [roomId, currentUser, otherUserNickname]);
 
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !currentUser || !roomId) return;
@@ -140,17 +152,12 @@ export default function PrivateChatPage() {
     if (error) { toast.error('メッセージ送信失敗'); } else { setNewMessage(''); }
   };
   
-  //const handleGoBackToCafe = () => { executeLeaveChat(); };
   const handleGoBackToCafe = () => {
-    // ★★★ このログを追加して、関数が呼び出されることを確認 ★★★
-    console.log('[PrivateChatPage] handleGoBackToCafe CALLED. Setting isConfirmLeaveModalOpen to true.');
-    
-    // ★★★ 確認モーダルを開くためのステートを true に設定 ★★★
-    setIsConfirmLeaveModalOpen(true); 
+    setIsConfirmLeaveModalOpen(true);
   };
+
   const executeLeaveChat = async () => {
     setIsConfirmLeaveModalOpen(false);
-    console.log('[PrivateChatPage] executeLeaveChat: User confirmed to leave chat.');
     if (!roomId || !currentUser) { router.push('/'); return; }
     let myNickname = (currentUser.user_metadata?.nickname as string) || '誰か';
     if (!currentUser.user_metadata?.nickname) {
@@ -164,9 +171,13 @@ export default function PrivateChatPage() {
     } catch (err) { console.error('Error sending leave event:', err); }
     router.push('/');
   };
-  const handlePartnerLeftModalClose = () => { setIsPartnerLeftModalOpen(false); router.push('/'); };
 
-    // --- JSXのレンダリングロジック ---
+  const handlePartnerLeftModalClose = () => {
+    setIsPartnerLeftModalOpen(false);
+    router.push('/');
+  };
+
+  // --- JSXのレンダリングロジック ---
   if (loading) { 
     return (<div className="min-h-screen flex items-center justify-center bg-gray-100"><p className="text-xl font-semibold text-gray-700">チャットを読み込み中...</p></div>);
   }
@@ -178,7 +189,7 @@ export default function PrivateChatPage() {
     <>
       <Toaster position="top-center" />
       <PartnerLeftModal isOpen={isPartnerLeftModalOpen} onClose={handlePartnerLeftModalClose} partnerNickname={leavingPartnerNickname} />
-      <ConfirmLeaveChatModal isOpen={isConfirmLeaveModalOpen} onConfirm={executeLeaveChat} onCancel={() => setIsConfirmLeaveModalOpen(false)} partnerNickname={otherUserNickname || '相手'} />
+      <ConfirmLeaveChatModal isOpen={isConfirmLeaveModalOpen} onConfirm={executeLeaveChat} onCancel={() => setIsConfirmLeaveModalOpen(false)} partnerNickname={otherUserNickname} />
       <MessageLogModal isOpen={isMessageLogModalOpen} onClose={() => setIsMessageLogModalOpen(false)} messages={messages} currentUserId={currentUser.id} otherUserNickname={otherUserNickname} />
 
       <div 
@@ -200,15 +211,14 @@ export default function PrivateChatPage() {
         </button>
         
         <div className="relative w-full max-w-md flex flex-col items-center justify-end h-auto min-h-[150px] max-h-[45vh]">
-          {/* ★ <img> を <Image> に変更 */}
+          {/* ★ <img> を <Image /> に変更 */}
           <Image 
             src="/silhouette-female.png" 
             alt="相手のシルエット" 
-            width={200} // ★ width を指定 (実際の画像サイズや表示したいサイズに合わせて調整)
-            height={350} // ★ height を指定 (width と合わせてアスペクト比を考慮)
+            width={200} // ★ 画像の固有の幅に合わせて調整してください
+            height={350} // ★ 画像の固有の高さに合わせて調整してください
             className="max-h-full w-auto object-contain opacity-40" // opacity-60 から opacity-40 へ
-            // onError は Image コンポーネントでは直接使えません。必要なら <picture> や代替コンポーネントで対応
-            priority // LCPになりうる場合はpriority属性を検討
+            priority // ページの主要コンテンツであればtrue
           />
         </div>
 

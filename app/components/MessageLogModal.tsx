@@ -3,8 +3,7 @@
 
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useRef, useEffect } from 'react';
-//import { Message,  } from '../../app/chat/[roomId]/page'; // ★ 名前付きインポート
-import { Message, Profile, ChatRoomInfo, UserLeftPayload, MessageLogModalProps } from '@/lib/types'; // '@/types' は types.ts への正しいパスに置き換えてください
+import { Message, MessageLogModalProps } from '@/lib/types'; // '@/types' は types.ts への正しいパスに置き換えてください
 
 
 export default function MessageLogModal({

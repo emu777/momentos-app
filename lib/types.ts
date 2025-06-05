@@ -71,4 +71,11 @@ export interface Profile {
     currentUserId: string;
     otherUserNickname: string;
   }
+  export interface MessageLogModalProps { // ★ これが MessageLogModal のプロパティ型
+    isOpen: boolean;
+    onClose: () => void;
+    messages: Message[]; // ★ Message 型を参照
+    currentUserId: string;
+    otherUserNickname: string;
+  }
   // 他にもアプリケーション全体で共有したい型があればここに追加
