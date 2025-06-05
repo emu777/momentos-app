@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import toast, { Toaster } from 'react-hot-toast';
-import Image from 'next/image'; // Next.js Imageコンポーネント
+//import Image from 'next/image'; // Next.js Imageコンポーネント
 
 // あなたの型定義ファイルからインポート (パスは実際の場所に合わせてください)
 import { Profile, UserWithProfile, ChatRequest } from '../lib/types'; 
@@ -131,8 +131,7 @@ useEffect(() => {
     )
     .subscribe();
   return () => { if (requestsChannel) supabase.removeChannel(requestsChannel); };
-}, [currentUser?.id, isClientLoaded, router]); // ★ currentUser?.id を依存配列に追加
-
+}, [currentUser, isClientLoaded, router]); // ★ currentUser?.id を currentUser に変更
 // ユーザーAが送信したリクエストの応答を待つためのuseEffectフック
 // Warning: React Hook useEffect has a missing dependency: 'currentUser'.
 // 対処: currentUser を依存配列に追加するか、currentUser?.id にする
@@ -170,47 +169,129 @@ useEffect(() => {
     });
   return () => { supabase.removeChannel(requestStatusChannel); };
 }, [waitingForRequestId, currentUser?.id, router, waitingForRoomId, waitingForTargetNickname]); // ★ currentUser?.id を使用
-// handleInitiateChat 関数
+// app/page.tsx 内の handleInitiateChat 関数
+
 const handleInitiateChat = async (targetUserId: string) => {
-  // ... (この関数内の error: any は Turn 287/289 のように unknown と型ガードで修正済みと仮定)
-  // ここでは 'statusError' is defined but never used. のエラーを修正します。
-  const callTimestamp = new Date().toISOString();
-  if (initiatingChatWith === targetUserId || initiatingChatWith === "ANY_USER_PENDING") return;
+  // callTimestamp を宣言 (これが177行目あたりだと仮定)
+  const callTimestamp = new Date().toISOString(); 
+  
+  // ★ callTimestamp をログで使用する
+  console.log(`[handleInitiateChat START - ${callTimestamp}] Called with targetUserId:`, targetUserId);
+
+  // 二重実行防止ガード (initiatingChatWith と setInitiatingChatWith は正しく宣言されている前提)
+  if (initiatingChatWith === targetUserId || initiatingChatWith === "ANY_USER_PENDING") {
+    console.log(`[handleInitiateChat IGNORED - ${callTimestamp}] Chat initiation already in progress for ${initiatingChatWith}.`);
+    return;
+  }
   setInitiatingChatWith(targetUserId);
+
   try {
-    if (!currentUser || !targetUserId) { toast.error('認証エラーまたは相手不明'); return; }
+    if (!currentUser || !targetUserId) {
+      toast.error('認証エラーまたは相手不明');
+      return; // finallyブロックで initiatingChatWith はリセットされます
+    }
     const currentUserId = currentUser.id;
-    if (currentUserId === targetUserId) { toast.error('自分自身には話しかけられません。'); return; }
+    if (currentUserId === targetUserId) {
+      toast.error('自分自身には話しかけられません。');
+      return; // finallyブロックで initiatingChatWith はリセットされます
+    }
+
     const user1 = currentUserId < targetUserId ? currentUserId : targetUserId;
     const user2 = currentUserId < targetUserId ? targetUserId : currentUserId;
     const targetUserProfile = onlineUsers.find(u => u.id === targetUserId)?.profiles;
     const targetUserNickname = targetUserProfile?.nickname || '相手';
-    const { data: existingRoom, error: roomError } = await supabase.from('chat_rooms').select('id').eq('user1_id', user1).eq('user2_id', user2).single();
-    if (roomError && roomError.code !== 'PGRST116') { toast.error('ルーム確認エラー'); return; }
+
+    // ★ callTimestamp をログで使用する
+    console.log(`[handleInitiateChat LOGIC START - ${callTimestamp}] User1: ${user1}, User2: ${user2}, TargetNickname: ${targetUserNickname}`);
+    
+    const { data: existingRoom, error: roomError } = await supabase
+      .from('chat_rooms')
+      .select('id')
+      .eq('user1_id', user1)
+      .eq('user2_id', user2)
+      .single();
+
+    // ★ callTimestamp をログで使用する
+    console.log(`[handleInitiateChat LOGIC - ${callTimestamp}] existingRoom:`, existingRoom, 'roomError:', roomError);
+    if (roomError && roomError.code !== 'PGRST116') {
+      console.error(`[handleInitiateChat ERROR - ${callTimestamp}] Checking room:`, roomError);
+      toast.error('ルーム確認エラー');
+      return; // finallyブロックで initiatingChatWith はリセットされます
+    }
+
     let chatRoomIdToWaitFor: string | null = null;
     let newlyCreatedChatRequestId: string | null = null;
+
     if (existingRoom) {
       chatRoomIdToWaitFor = existingRoom.id;
-      const { data: newJoinRequestData, error: joinRequestError } = await supabase.from('chat_requests').insert({ sender_id: currentUserId, receiver_id: targetUserId, room_id: chatRoomIdToWaitFor, status: 'pending' }).select('id').single();
-      if (joinRequestError || !newJoinRequestData) { toast.error('参加リクエスト送信失敗'); return; }
+      // ★ callTimestamp をログで使用する
+      console.log(`[handleInitiateChat EXISTING_ROOM_PATH - ${callTimestamp}] Existing room found. ID: ${chatRoomIdToWaitFor}. Creating join request.`);
+      const { data: newJoinRequestData, error: joinRequestError } = await supabase
+        .from('chat_requests')
+        .insert({ sender_id: currentUserId, receiver_id: targetUserId, room_id: chatRoomIdToWaitFor, status: 'pending' })
+        .select('id')
+        .single();
+      if (joinRequestError || !newJoinRequestData) {
+        console.error(`[handleInitiateChat ERROR - ${callTimestamp}] Creating join request:`, joinRequestError);
+        toast.error('参加リクエスト送信失敗');
+        return; // finallyブロックで initiatingChatWith はリセットされます
+      }
       newlyCreatedChatRequestId = newJoinRequestData.id;
+      // ★ callTimestamp をログで使用する
+      console.log(`[handleInitiateChat EXISTING_ROOM_PATH - ${callTimestamp}] Join request created. ID: ${newlyCreatedChatRequestId}`);
     } else {
-      const { data: newRoomData, error: createRoomError } = await supabase.from('chat_rooms').insert({ user1_id: user1, user2_id: user2 }).select('id').single();
-      if (createRoomError || !newRoomData) { toast.error('ルーム作成失敗'); return; }
+      // ★ callTimestamp をログで使用する
+      console.log(`[handleInitiateChat NEW_ROOM_PATH - ${callTimestamp}] No existing room. Creating new room and request.`);
+      const { data: newRoomData, error: createRoomError } = await supabase
+        .from('chat_rooms')
+        .insert({ user1_id: user1, user2_id: user2 })
+        .select('id')
+        .single();
+      if (createRoomError || !newRoomData) {
+        console.error(`[handleInitiateChat ERROR - ${callTimestamp}] Creating new room:`, createRoomError);
+        toast.error('ルーム作成失敗');
+        return; // finallyブロックで initiatingChatWith はリセットされます
+      }
       chatRoomIdToWaitFor = newRoomData.id;
-      const { data: newChatRequestData, error: initialRequestError } = await supabase.from('chat_requests').insert({ sender_id: currentUserId, receiver_id: targetUserId, room_id: chatRoomIdToWaitFor, status: 'pending' }).select('id').single();
-      if (initialRequestError || !newChatRequestData) { toast.error('チャットリクエスト送信失敗'); return; }
+      // ★ callTimestamp をログで使用する
+      console.log(`[handleInitiateChat NEW_ROOM_PATH - ${callTimestamp}] New room created. ID: ${chatRoomIdToWaitFor}`);
+      
+      const { data: newChatRequestData, error: initialRequestError } = await supabase
+        .from('chat_requests')
+        .insert({ sender_id: currentUserId, receiver_id: targetUserId, room_id: chatRoomIdToWaitFor, status: 'pending' })
+        .select('id')
+        .single();
+      if (initialRequestError || !newChatRequestData) {
+        console.error(`[handleInitiateChat ERROR - ${callTimestamp}] Creating initial request:`, initialRequestError);
+        toast.error('チャットリクエスト送信失敗');
+        return; // finallyブロックで initiatingChatWith はリセットされます
+      }
       newlyCreatedChatRequestId = newChatRequestData.id;
+      // ★ callTimestamp をログで使用する
+      console.log(`[handleInitiateChat NEW_ROOM_PATH - ${callTimestamp}] Initial request created. ID: ${newlyCreatedChatRequestId}`);
     }
+
     if (newlyCreatedChatRequestId && chatRoomIdToWaitFor) {
-      setWaitingForRequestId(newlyCreatedChatRequestId); setWaitingForRoomId(chatRoomIdToWaitFor); setWaitingForTargetNickname(targetUserNickname);
+      setWaitingForRequestId(newlyCreatedChatRequestId);
+      setWaitingForRoomId(chatRoomIdToWaitFor);
+      setWaitingForTargetNickname(targetUserNickname);
       toast.success(`${targetUserNickname} にリクエストを送信しました。応答をお待ちください。`);
-    } else { toast.error('リクエスト処理エラー'); }
-  } catch (e: unknown) { // ★ any を unknown に修正
+    } else {
+      // ★ callTimestamp をログで使用する
+      console.error(`[handleInitiateChat ERROR - ${callTimestamp}] Missing request ID or room ID for waiting state.`);
+      toast.error('リクエスト処理エラー');
+    }
+  } catch (e: unknown) { // 型を unknown に
       let msg = 'チャット開始エラー';
       if (e instanceof Error) msg = `チャット開始エラー: ${e.message}`;
       toast.error(msg);
-  } finally { setInitiatingChatWith(null); }
+      // ★ callTimestamp をログで使用する (任意)
+      console.error(`[handleInitiateChat CATCH - ${callTimestamp}] Exception:`, e);
+  } finally {
+    setInitiatingChatWith(null);
+    // ★ callTimestamp をログで使用する
+    console.log(`[handleInitiateChat FINALLY - ${callTimestamp}] Reset initiatingChatWith.`);
+  }
 };
 
 // モーダルの結果を処理する関数

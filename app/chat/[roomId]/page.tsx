@@ -9,14 +9,12 @@ import toast, { Toaster } from 'react-hot-toast';
 import Image from 'next/image'; // ★ next/image をインポート
 
 // あなたの型定義ファイルからインポート (パスは実際の場所に合わせてください)
-// Profile 型は Message 型の中で使用されているため、Message 型を正しく使っていれば Profile も間接的に使用されます。
 import { Message, ChatRoomInfo, UserLeftPayload, Profile } from '../../../lib/types'; 
 
-// モーダルコンポーネントのインポート (パスは実際の場所に合わせてください)
+// モーダルコンポーネントのインポート
 import PartnerLeftModal from '../../components/PartnerLeftModal';
 import MessageLogModal from '../../components/MessageLogModal';
 import ConfirmLeaveChatModal from '../../components/ConfirmLeaveChatModal';
-
 
 export default function PrivateChatPage() {
   const router = useRouter();
@@ -38,7 +36,7 @@ export default function PrivateChatPage() {
   const [leavingPartnerNickname, setLeavingPartnerNickname] = useState<string>('');
   const [isConfirmLeaveModalOpen, setIsConfirmLeaveModalOpen] = useState(false);
 
-  const chatContainerRef = useRef<HTMLDivElement | null>(null); // ★ useRef はここで使用
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
   // 認証とルーム情報取得
   useEffect(() => {
@@ -81,8 +79,8 @@ export default function PrivateChatPage() {
     if (!currentUser || !chatRoomInfo || !roomId || !session) return;
     setLoading(true);
     const updateLatestOpponentMsg = (allMsgs: Message[]) => {
-      // currentUserがnullでないことは上でチェック済みなので、ここでは直接使う
-      const opponentMsgs = allMsgs.filter(msg => msg.sender_id !== currentUser!.id); 
+      if (!currentUser) return; // currentUserの存在を再確認
+      const opponentMsgs = allMsgs.filter(msg => msg.sender_id !== currentUser.id);
       if (opponentMsgs.length > 0) {
         setLatestOpponentMessage(opponentMsgs[opponentMsgs.length - 1]);
       } else {
@@ -103,7 +101,7 @@ export default function PrivateChatPage() {
       setLoading(false);
     }
     fetchMessages();
-    const messagesChannel = supabase.channel(`public_messages_in_room_${roomId}_v_final_linted`)
+    const messagesChannel = supabase.channel(`public_messages_in_room_${roomId}_v_lint_final`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}`},
         async (payload) => {
           const newMessagePayload = payload.new as Omit<Message, 'profiles'>;
@@ -121,7 +119,7 @@ export default function PrivateChatPage() {
   
   // 自動スクロール
   useEffect(() => {
-    if (chatContainerRef.current) { // ★ useRef を使用
+    if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
@@ -129,12 +127,11 @@ export default function PrivateChatPage() {
   // 相手退出検知リスナー
   useEffect(() => {
     if (!roomId || !currentUser) return;
-    // const userId = currentUser.id; // ★ この行を削除 (直接 currentUser.id を使用)
+    // const userId = currentUser.id; // ★ 未使用のため削除
     const roomNotificationChannelName = `chat_room_notifications-${roomId}`;
     const roomNotificationChannel = supabase.channel(roomNotificationChannelName, { config: { broadcast: { ack: true } } });
     roomNotificationChannel.on('broadcast', { event: 'user_left_room' }, (message) => {
       const payload = message.payload as UserLeftPayload;
-      // currentUser が null でないことを再度確認 (非同期コールバック内なので)
       if (payload && payload.userIdWhoLeft && currentUser && payload.userIdWhoLeft !== currentUser.id) {
         const nicknameToDisplay = payload.nicknameWhoLeft || otherUserNickname || '相手';
         setLeavingPartnerNickname(nicknameToDisplay);
@@ -215,10 +212,10 @@ export default function PrivateChatPage() {
           <Image 
             src="/silhouette-female.png" 
             alt="相手のシルエット" 
-            width={200} // ★ 画像の固有の幅に合わせて調整してください
-            height={350} // ★ 画像の固有の高さに合わせて調整してください
-            className="max-h-full w-auto object-contain opacity-40" // opacity-60 から opacity-40 へ
-            priority // ページの主要コンテンツであればtrue
+            width={200}  // ★ 画像の固有の幅 (ピクセル単位) - 実際の画像に合わせて調整してください
+            height={350} // ★ 画像の固有の高さ (ピクセル単位) - 実際の画像に合わせて調整してください
+            className="max-h-full w-auto object-contain opacity-40" 
+            priority // ページ読み込み時に優先的に表示する場合
           />
         </div>
 

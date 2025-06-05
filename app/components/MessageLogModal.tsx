@@ -3,8 +3,19 @@
 
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useRef, useEffect } from 'react';
-import { Message, MessageLogModalProps } from '@/lib/types'; // '@/types' は types.ts への正しいパスに置き換えてください
 
+// ★★★ インポートする型を修正 ★★★
+// MessageLogModalProps のみインポートします。
+// Message と Profile は MessageLogModalProps を通して間接的に型情報が伝わるため、
+// このファイルで明示的にインポートする必要はありません。
+// ChatRoomInfo と UserLeftPayload はこのコンポーネントでは使用されていないはずなので削除します。
+import { MessageLogModalProps, Message } from '@/lib/types'; // Messageもmap内で型推論を助けるために残すか、
+                                                      // MessageLogModalProps内でMessageが解決されるなら不要
+
+// もし、MessageLogModalProps の定義が lib/types.ts にあり、
+// その中で Message や Profile が正しくエクスポートされていれば、
+// TypeScript は MessageLogModalProps を通じてそれらの型を解決できます。
+// 実際に Message型を msg の型注釈で使うのであれば、Message のインポートは必要です。
 
 export default function MessageLogModal({
   isOpen,
@@ -12,15 +23,15 @@ export default function MessageLogModal({
   messages,
   currentUserId,
   otherUserNickname,
-}: MessageLogModalProps) {
+}: MessageLogModalProps) { // ★ ここで MessageLogModalProps を使用
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null); // 自動スクロール用
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => { // モーダルが開いたときやメッセージが更新されたときに最下部へスクロール
+  useEffect(() => {
     if (isOpen) {
       scrollToBottom();
     }
@@ -65,12 +76,11 @@ export default function MessageLogModal({
                   {otherUserNickname} さんとのメッセージログ
                 </Dialog.Title>
                 
-                {/* メッセージリスト */}
                 <div className="flex-grow overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                   {messages.length === 0 ? (
                     <p className="text-sm text-gray-500 text-center py-4">メッセージ履歴はありません。</p>
                   ) : (
-                    messages.map((msg) => (
+                    messages.map((msg: Message) => ( // ★ msg の型として Message を明示的に使用
                       <div
                         key={msg.id}
                         className={`flex ${msg.sender_id === currentUserId ? 'justify-end' : 'justify-start'}`}
@@ -82,7 +92,7 @@ export default function MessageLogModal({
                               : 'bg-gray-100 text-gray-800 rounded-bl-none'
                           }`}
                         >
-                          {msg.sender_id !== currentUserId && ( // 相手のメッセージのみニックネーム表示
+                          {msg.sender_id !== currentUserId && (
                              <p className="text-xs font-medium text-gray-500 mb-0.5">
                                {msg.profiles?.nickname || otherUserNickname}
                              </p>
@@ -95,7 +105,7 @@ export default function MessageLogModal({
                       </div>
                     ))
                   )}
-                  <div ref={messagesEndRef} /> {/* 自動スクロール用の空要素 */}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 <div className="mt-5 pt-4 border-t">
