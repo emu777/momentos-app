@@ -350,20 +350,36 @@ return (
 
 
     <div className="min-h-screen bg-gradient-to-br from-[#F0EAD6] to-[#EADDCA] flex flex-col items-center pt-8 sm:pt-12 px-4 relative overflow-x-hidden">
-      {/* ... (header, p, main (UI改善版)) ... */}
+    <div 
+        className="fixed inset-0 bg-cover bg-center opacity-50" // opacityを少し調整しました（例: 50%）
+        style={{ backgroundImage: "url('/cafe-bg.jpg')" }}
+      ></div>
+      {/* ★★★ 必要であれば、背景画像の上にさらに薄い色のオーバーレイを追加して文字の可読性を上げる ★★★ */}
+      <div className="fixed inset-0 bg-black/10 z-[-1]"></div>
+
       {/* ログアウトボタン内の statusError は未使用なので削除するか、ログ出力する */}
-      <header className="z-20 w-full max-w-6xl mx-auto mb-10 sm:mb-12 flex justify-between items-center p-4 bg-white/60 backdrop-blur-lg shadow-lg rounded-2xl">
-        <h1 className="text-3xl sm:text-4xl font-bold text-[#5C3A21] tracking-tight cursor-pointer" onClick={() => router.push('/')}>
+      <header className="z-20 w-full max-w-6xl mx-auto mb-10 sm:mb-12 flex justify-between items-center p-4 rounded-2xl"> {/* ★ 背景色とbackdrop-blur、shadowを削除 */}
+        <h1 
+          className="text-4xl sm:text-5xl font-bold text-white tracking-tight cursor-pointer [text-shadow:_2px_2px_6px_rgb(0_0_0_/_0.6)]" /* ★ テキスト色を白に、強めの影 */
+          onClick={() => router.push('/')}
+        >
           Momentos Café
         </h1>
         <div className="relative">
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-full hover:bg-gray-200/70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6F4E37] transition-colors" aria-label="メニューを開く">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-7 h-7 text-[#6F4E37]">
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="p-2 rounded-full text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/50 transition-colors" /* ★ アイコンの色も白系に合わせる */
+            aria-label="メニューを開く"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-8 h-8">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
             </svg>
           </button>
           {isMenuOpen && (
-            <div className="absolute right-0 mt-2 w-60 origin-top-right bg-white rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none py-2 z-30" role="menu" aria-orientation="vertical" aria-labelledby="menu-button">
+            <div 
+              className="absolute right-0 mt-2 w-60 origin-top-right bg-white rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none py-2 z-30"
+              role="menu" aria-orientation="vertical" aria-labelledby="menu-button"
+            >
               {[
                 { label: 'プロフィール', href: '/profile', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 mr-3 text-gray-500"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.99 9.99 0 0010 12.75a9.99 9.99 0 00-6.535 1.743z" /></svg> },
                 { label: 'チャット履歴', href: '/chat-history', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 mr-3 text-gray-500"><path fillRule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clipRule="evenodd" /></svg> },
@@ -404,67 +420,86 @@ return (
       <p className="text-lg sm:text-xl text-center mb-10 z-10 max-w-2xl leading-relaxed bg-clip-text text-transparent bg-gradient-to-r from-[#6F4E37] to-[#A0522D] font-medium">
         カフェで偶然隣り合った人と、ふとした会話を。<br/>気になる相手に話しかけてみましょう。
       </p>
-
-      <main className="z-10 w-full max-w-3xl px-2 sm:px-0 flex flex-col items-center space-y-8">
+      {/* ★★★ この <main> タグから下の部分を置き換えてください ★★★ */}
+      <main className="z-10 w-full max-w-4xl px-2 sm:px-0 flex flex-col items-center space-y-6">
         <div className="w-full flex justify-between items-center px-2">
           <h2 className="text-2xl sm:text-3xl font-semibold text-[#6F4E37]">現在の空席</h2>
         </div>
+        <p className="text-sm text-gray-700 -mt-4 mb-4">オンラインで話せる相手を探しています</p>
 
+        {/* 応答待ちUI */}
         {isClientLoaded && waitingForRequestId && (
-          <div className="w-full p-4 my-2 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded-md shadow-md">
-            <p className="font-semibold">{waitingForTargetNickname || '相手'}さんの応答を待っています...</p>
+          <div className="w-full p-3 my-2 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded-md shadow-sm">
+            <p className="font-semibold text-sm">{waitingForTargetNickname || '相手'}さんの応答を待っています...</p>
           </div>
         )}
 
-        {isClientLoaded && !loading && onlineUsers.length > 0 ? (
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {onlineUsers.map((user) => (
-              user.id === currentUser?.id ? null : ( 
-                <div key={user.id} className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg p-5 transition-all duration-300 hover:shadow-2xl hover:scale-105 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center mb-3">
-                      <div className="w-12 h-12 rounded-full mr-4 bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-white text-xl font-bold">
-                        {user.profiles?.nickname ? user.profiles.nickname.charAt(0).toUpperCase() : '?'}
+        {/* オンラインユーザーリストの表示 */}
+        <div className="w-full">
+          {isClientLoaded && !loading && onlineUsers.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {onlineUsers.map((user) => (
+                user.id === currentUser?.id ? null : (
+                  <div 
+                  key={user.id} 
+                  className="bg-[#FAF7F0]/80 backdrop-blur-md rounded-xl shadow-lg p-5 transition-all duration-300 hover:shadow-2xl hover:scale-105 flex flex-col justify-between" // ★ bg-white/80 を bg-[#FAF7F0]/80 に変更
+                >
+                    <div> {/* カード上部のコンテンツエリア */}
+                      <div className="flex items-center mb-3"> {/* アバターとニックネーム・オンライン状態エリア */}
+                        <div className="w-12 h-12 rounded-full mr-3 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-gray-600 text-xl font-semibold shadow-sm shrink-0">
+                          {user.profiles?.nickname ? user.profiles.nickname.charAt(0).toUpperCase() : '?'}
+                        </div>
+                        <div className="flex-grow overflow-hidden">
+                          {/* ニックネームとオンライン状態を同じ行に配置 */}
+                          <div className="flex justify-between items-center">
+                            <p className="text-lg font-semibold text-gray-800 truncate">{user.profiles?.nickname || '名無しさん'}</p>
+                            <p className="text-xs text-green-600 font-medium flex items-center shrink-0">
+                              <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 inline-block animate-pulse"></span>
+                              オンライン
+                            </p>
+                          </div>
+                          {/* 年齢・居住地はニックネームの下に */}
+                          <p className="text-xs text-gray-500 truncate mt-0.5">
+                            {user.profiles?.age ? `${user.profiles.age}歳` : ''}
+                            {user.profiles?.age && user.profiles?.residence ? ' / ' : ''}
+                            {user.profiles?.residence || (user.profiles?.age ? '' : '情報未設定')}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-lg font-semibold text-gray-800 truncate">{user.profiles?.nickname || '名無しさん'}</p>
-                        <p className="text-xs text-green-500 font-medium flex items-center">
-                          <span className="w-2 h-2 bg-green-500 rounded-full mr-1.5 inline-block animate-pulse"></span>
-                          オンライン
+                      {/* 自己紹介文 */}
+                      <div className="text-xs text-gray-600 mb-3 border-t border-gray-200 pt-2 mt-2">
+                        <p className="h-10 overflow-hidden line-clamp-2"> {/* 自己紹介は2行まで */}
+                          {user.profiles?.bio || '自己紹介はありません。'}
                         </p>
                       </div>
                     </div>
-                    <div className="text-sm text-gray-600 space-y-1 mb-4">
-                      <p><span className="font-medium text-gray-700">年齢: </span>{user.profiles?.age ? `${user.profiles.age}歳` : '未設定'}</p>
-                      <p><span className="font-medium text-gray-700">居住地: </span>{user.profiles?.residence || '未設定'}</p>
-                      <p className="text-xs text-gray-500 h-10 overflow-hidden line-clamp-2">{user.profiles?.bio || '自己紹介はありません'}</p>
-                    </div>
+                    {/* 「話しかける」ボタン (カード下部に配置) */}
+                    <button
+                      onClick={() => !initiatingChatWith && handleInitiateChat(user.id)}
+                      disabled={!!initiatingChatWith}
+                      className={`w-full mt-auto px-3 py-2 text-sm bg-[#A0522D] text-white font-semibold rounded-md shadow hover:bg-[#8B4513] transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#6F4E37] ${initiatingChatWith ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    >
+                      話しかける
+                    </button>
                   </div>
-                  <button
-                    onClick={() => !initiatingChatWith && handleInitiateChat(user.id)}
-                    disabled={!!initiatingChatWith}
-                    className={`w-full mt-auto px-4 py-2.5 bg-gradient-to-r from-[#A0522D] to-[#8B4513] text-white font-semibold rounded-lg shadow-md hover:from-[#8B4513] hover:to-[#A0522D] transition duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6F4E37] ${initiatingChatWith ? 'opacity-60 cursor-not-allowed' : ''}`}
-                  >
-                    話しかける
-                  </button>
+                )
+              ))}
+            </div>
+          ) : (
+             isClientLoaded && !loading && onlineUsers.length === 0 ? (
+                <div className="w-full text-center py-12 bg-white/70 backdrop-blur-sm rounded-xl shadow-md">
+                  <p className="text-5xl mb-3">☕</p>
+                  <p className="text-gray-600 text-md">現在、空席はありません。</p>
+                  <p className="text-gray-500 text-xs mt-1">少し待ってから再度ご確認ください。</p>
                 </div>
-              )
-            ))}
-          </div>
-        ) : (
-           isClientLoaded && !loading && onlineUsers.length === 0 ? (
-              <div className="w-full text-center py-16 bg-white/70 backdrop-blur-sm rounded-xl shadow-md">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-16 h-16 mx-auto text-gray-400 mb-4"><path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-3.471-5.628M12 12a3 3 0 100-6 3 3 0 000 6zm6 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <p className="text-gray-600 text-lg">現在、空席はありません。</p>
-                <p className="text-gray-500 text-sm mt-2">少し待ってから再度ご確認ください。</p>
-              </div>
-          ) : ( 
-              <div className="w-full text-center py-16">
-                <svg className="animate-spin h-10 w-10 text-[#6F4E37] mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <p className="text-gray-500 text-lg mt-4">情報を読み込み中...</p>
-              </div>
-          )
-        )}
+            ) : ( 
+                <div className="w-full text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-t-2 border-[#6F4E37]"></div>
+                  <p className="text-gray-500 text-md mt-3">情報を読み込み中...</p>
+                </div>
+            )
+          )}
+        </div>
       </main>
 
       <footer className="z-10 mt-16 mb-8 text-center text-sm text-[#6F4E37]/70">
