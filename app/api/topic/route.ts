@@ -51,12 +51,50 @@ export async function GET() {
     // NextResponse.json() は、デフォルトでHTTPステータスコード200（OK）を返します。
     return NextResponse.json({ topic: selectedTopic });
 
-  } catch (e: any) {
-    // 上記のSupabase関連のエラー以外で、予期せぬサーバーサイドのエラーが発生した場合の処理
-    console.error("API Routeで予期せぬエラーが発生しました:", e.message);
-    // ユーザーに返すエラーメッセージとHTTPステータスコード500を返します。
+  } catch (e: unknown) { // ★ e の型を any から unknown に変更
+    let errorMessage = "不明なエラーがAPIルートで発生しました"; // デフォルトのエラーメッセージ
+    let errorDetailsForLog = ""; // ログ用の詳細情報
+  
+    if (typeof e === "string") {
+      // エラーが文字列としてスローされた場合
+      errorMessage = e;
+      errorDetailsForLog = e;
+    } else if (e instanceof Error) {
+      // エラーが Error オブジェクトのインスタンスである場合
+      errorMessage = e.message; // Errorオブジェクトのmessageプロパティを使用
+      errorDetailsForLog = e.stack || e.message; // スタックトレースもログに残す
+    } else if (typeof e === "object" && e !== null && "message" in e) {
+      // 'message' プロパティを持つオブジェクトの場合 (カスタムエラーオブジェクトなど)
+      // (e as any).message だとESLintルールに抵触する可能性があるため、より安全なアクセスを試みる
+      const potentialErrorWithMessage = e as { message?: unknown };
+      if (typeof potentialErrorWithMessage.message === "string") {
+        errorMessage = potentialErrorWithMessage.message;
+      }
+      // 詳細ログ用にはオブジェクト全体を文字列化
+      try {
+        errorDetailsForLog = JSON.stringify(e);
+      } catch {
+        errorDetailsForLog = "Cannot stringify error object";
+      }
+    } else {
+      // その他の予期せぬエラー形式
+      try {
+        errorDetailsForLog = JSON.stringify(e);
+      } catch {
+        errorDetailsForLog = String(e); // 最悪の場合、文字列に変換
+      }
+    }
+    
+    console.error("API Routeで予期せぬエラー:", errorMessage, "Details for log:", errorDetailsForLog);
+    
+    // クライアントに返すエラーメッセージは汎用的なものにする
     return NextResponse.json(
-      { topic: "話題の取得中にサーバーエラーが発生しました。", error: "internal_server_error" },
+      { 
+        topic: "話題の取得中にサーバーエラーが発生しました。", // これは固定のエラーメッセージ
+        error: "internal_server_error",
+        // 開発環境でのみ詳細なエラーメッセージをクライアントに返すことも検討できます (本番では非推奨)
+        // details: process.env.NODE_ENV === 'development' ? errorMessage : undefined 
+      },
       { status: 500 }
     );
   }

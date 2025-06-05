@@ -30,9 +30,27 @@ export default function LoginPage() {
         setMessage('ログイン成功！');
         router.push('/'); // ログイン後、トップページにリダイレクト
       }
-    } catch (error: any) {
-      setMessage(`予期せぬエラー: ${error.message}`);
-      console.error('Unexpected login error:', error);
+    } catch (e: unknown) { // ★ error を e に変更し、型を unknown に
+      let errorMessage = "予期せぬログインエラーが発生しました。"; // デフォルトメッセージ
+      if (e instanceof Error) {
+        errorMessage = `ログインエラー: ${e.message}`;
+        console.error('Unexpected login error (Error instance):', e);
+      } else if (typeof e === 'string') {
+        errorMessage = `ログインエラー: ${e}`;
+        console.error('Unexpected login error (string):', e);
+      } else if (e && typeof e === 'object' && 'message' in e) {
+        // Supabaseのエラーオブジェクトなどはここに該当する可能性がある
+        const supabaseError = e as { message: string | { error_description?: string } }; // Supabaseのエラーはmessageがオブジェクトの場合もある
+        if (typeof supabaseError.message === 'string') {
+          errorMessage = `ログインエラー: ${supabaseError.message}`;
+        } else if (supabaseError.message && typeof supabaseError.message.error_description === 'string') {
+          errorMessage = `ログインエラー: ${supabaseError.message.error_description}`;
+        }
+        console.error('Unexpected login error (object with message):', e);
+      } else {
+        console.error('Unexpected login error (unknown type):', e);
+      }
+      setMessage(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -47,10 +65,6 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-      }, {
-        // オプション: サインアップ後にリダイレクトURLを指定する場合
-        // emailRedirectTo: `${location.origin}/auth/callback` // メール確認用URL
-        // data: {} // ユーザーメタデータ。今回はprofilesテーブルに別途保存するので空でOK
       });
 
       if (error) {
@@ -60,9 +74,22 @@ export default function LoginPage() {
         setMessage('登録メールを送信しました。メールを確認して認証してください。');
         // router.push('/'); // メール確認が必須の場合、ここではリダイレクトしない
       }
-    } catch (error: any) {
-      setMessage(`予期せぬエラー: ${error.message}`);
-      console.error('Unexpected sign up error:', error);
+    } catch (e: unknown) { // ★ error を e に変更し、型を unknown に
+      let errorMessage = "予期せぬエラーが発生しました。"; // デフォルトメッセージ
+      if (e instanceof Error) {
+        errorMessage = `予期せぬエラー: ${e.message}`;
+        console.error('Unexpected sign up error (Error instance):', e);
+      } else if (typeof e === 'string') {
+        errorMessage = `予期せぬエラー: ${e}`;
+        console.error('Unexpected sign up error (string):', e);
+      } else if (e && typeof e === 'object' && 'message' in e) {
+        // Supabaseのエラーオブジェクトなどはここに該当する可能性がある
+        errorMessage = `予期せぬエラー: ${(e as { message: string }).message}`;
+        console.error('Unexpected sign up error (object with message):', e);
+      } else {
+        console.error('Unexpected sign up error (unknown type):', e);
+      }
+      setMessage(errorMessage);
     } finally {
       setLoading(false);
     }
