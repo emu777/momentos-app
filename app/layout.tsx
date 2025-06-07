@@ -4,8 +4,16 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
+import { M_PLUS_Rounded_1c } from 'next/font/google'; // ★ インポートするフォントを変更
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
+
+// ★ フォントオブジェクトを初期化
+const mplusRounded1c = M_PLUS_Rounded_1c({
+  weight: ['400', '500', '700', '800'], // 使用したいフォントの太さを指定
+  subsets: ['latin'], // 'japanese' サブセットが提供されていればそちらが良いですが、'latin' でカバーされることが多いです
+  display: 'swap',
+});
 
 export default function RootLayout({
   children,
@@ -92,7 +100,8 @@ export default function RootLayout({
 
   return (
     <html lang="ja">
-      <body>
+      {/* ★ body タグにフォントのクラス名を適用 */}
+      <body className={`${mplusRounded1c.className} antialiased`}>
         <Toaster position="top-center" />
         {children}
       </body>

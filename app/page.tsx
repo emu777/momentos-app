@@ -351,16 +351,16 @@ return (
 
     <div className="min-h-screen bg-gradient-to-br from-[#F0EAD6] to-[#EADDCA] flex flex-col items-center pt-8 sm:pt-12 px-4 relative overflow-x-hidden">
     <div 
-        className="fixed inset-0 bg-cover bg-center opacity-50" // opacityを少し調整しました（例: 50%）
+        className="fixed inset-0 bg-cover bg-center opacity-80" // opacityを少し調整しました（例: 50%）
         style={{ backgroundImage: "url('/cafe-bg.jpg')" }}
       ></div>
       {/* ★★★ 必要であれば、背景画像の上にさらに薄い色のオーバーレイを追加して文字の可読性を上げる ★★★ */}
       <div className="fixed inset-0 bg-black/10 z-[-1]"></div>
 
       {/* ログアウトボタン内の statusError は未使用なので削除するか、ログ出力する */}
-      <header className="z-20 w-full max-w-6xl mx-auto mb-10 sm:mb-12 flex justify-between items-center p-4 rounded-2xl"> {/* ★ 背景色とbackdrop-blur、shadowを削除 */}
+      <header className="z-20 w-full max-w-6xl mx-auto mb-10 sm:mb-12 flex justify-between items-center p-4 bg-[#F5F0E8]/70 backdrop-blur-lg shadow-lg rounded-2xl border border-white/20">
         <h1 
-          className="text-4xl sm:text-5xl font-bold text-white tracking-tight cursor-pointer [text-shadow:_2px_2px_6px_rgb(0_0_0_/_0.6)]" /* ★ テキスト色を白に、強めの影 */
+          className="text-3xl sm:text-4xl font-bold text-[#5C3A21] tracking-tight cursor-pointer" 
           onClick={() => router.push('/')}
         >
           Momentos Café
@@ -368,10 +368,10 @@ return (
         <div className="relative">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-2 rounded-full text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/50 transition-colors" /* ★ アイコンの色も白系に合わせる */
+            className="p-2 rounded-full hover:bg-gray-200/70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6F4E37] transition-colors"
             aria-label="メニューを開く"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-8 h-8">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="w-7 h-7 text-[#6F4E37]">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
             </svg>
           </button>
@@ -380,6 +380,7 @@ return (
               className="absolute right-0 mt-2 w-60 origin-top-right bg-white rounded-xl shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none py-2 z-30"
               role="menu" aria-orientation="vertical" aria-labelledby="menu-button"
             >
+              {/* メニュー項目は変更なし */}
               {[
                 { label: 'プロフィール', href: '/profile', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 mr-3 text-gray-500"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.095a1.23 1.23 0 00.41-1.412A9.99 9.99 0 0010 12.75a9.99 9.99 0 00-6.535 1.743z" /></svg> },
                 { label: 'チャット履歴', href: '/chat-history', icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 mr-3 text-gray-500"><path fillRule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clipRule="evenodd" /></svg> },
@@ -391,21 +392,7 @@ return (
                 </button>
               ))}
               <div className="border-t border-gray-200 my-1"></div>
-              <button 
-                onClick={async () => {
-                  setIsMenuOpen(false); 
-                  if (currentUser) { 
-                    try { 
-                      await supabase.from('user_statuses').upsert({ user_id: currentUser.id, is_online: false, last_active_at: new Date().toISOString() }, { onConflict: 'user_id' }); 
-                    } catch (e: unknown) { // ★ statusError を e に、型を unknown に
-                      console.error('[LogoutButton] Error setting offline status:', e);
-                      // statusError は使用されていなかったので、ここでは e をログに出力
-                    }
-                  } 
-                  const { error: signOutError } = await supabase.auth.signOut(); 
-                  if (signOutError) toast.error(`ログアウト失敗: ${signOutError.message}`);
-                  // else toast.success('ログアウトしました。'); // onAuthStateChangeがリダイレクトを処理
-                }}
+              <button onClick={async () => { /* ...ログアウト処理... */ }}
                 className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 flex items-center transition-colors"
                 role="menuitem"
               >
@@ -423,9 +410,9 @@ return (
       {/* ★★★ この <main> タグから下の部分を置き換えてください ★★★ */}
       <main className="z-10 w-full max-w-4xl px-2 sm:px-0 flex flex-col items-center space-y-6">
         <div className="w-full flex justify-between items-center px-2">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-[#6F4E37]">現在の空席</h2>
+        <h2 className="text-2xl sm:text-3xl font-semibold text-[#6F4E37] [text-shadow:_1px_1px_1px_rgb(255_255_255_/_0.7)] [-webkit-text-stroke:0.3px_#F5F0E8]">現在の空席</h2>
         </div>
-        <p className="text-sm text-gray-700 -mt-4 mb-4">オンラインで話せる相手を探しています</p>
+        <p className="text-sm text-gray-600 -mt-4 mb-4">オンラインで話せる相手を探しています</p> {/* ★ テキスト色を少し濃く */}
 
         {/* 応答待ちUI */}
         {isClientLoaded && waitingForRequestId && (
@@ -439,48 +426,48 @@ return (
           {isClientLoaded && !loading && onlineUsers.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {onlineUsers.map((user) => (
-                user.id === currentUser?.id ? null : (
+                user.id === currentUser?.id ? null : ( 
                   <div 
-                  key={user.id} 
-                  className="bg-[#FAF7F0]/80 backdrop-blur-md rounded-xl shadow-lg p-5 transition-all duration-300 hover:shadow-2xl hover:scale-105 flex flex-col justify-between" // ★ bg-white/80 を bg-[#FAF7F0]/80 に変更
-                >
+                    key={user.id} 
+                    className="bg-[#F5F0E8]/90 backdrop-blur-md rounded-xl shadow-lg p-4 transition-all duration-300 hover:shadow-xl flex flex-col border border-[#6F4E37]/30"
+                  >
                     <div> {/* カード上部のコンテンツエリア */}
-                      <div className="flex items-center mb-3"> {/* アバターとニックネーム・オンライン状態エリア */}
+                      <div className="flex items-start mb-3">
+                        {/* アバター */}
                         <div className="w-12 h-12 rounded-full mr-3 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-gray-600 text-xl font-semibold shadow-sm shrink-0">
                           {user.profiles?.nickname ? user.profiles.nickname.charAt(0).toUpperCase() : '?'}
                         </div>
+                        {/* 左側カラム */}
                         <div className="flex-grow overflow-hidden">
-                          {/* ニックネームとオンライン状態を同じ行に配置 */}
-                          <div className="flex justify-between items-center">
-                            <p className="text-lg font-semibold text-gray-800 truncate">{user.profiles?.nickname || '名無しさん'}</p>
-                            <p className="text-xs text-green-600 font-medium flex items-center shrink-0">
-                              <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 inline-block animate-pulse"></span>
-                              オンライン
-                            </p>
-                          </div>
-                          {/* 年齢・居住地はニックネームの下に */}
+                          <p className="text-lg font-semibold text-[#5C3A21] truncate">{user.profiles?.nickname || '名無しさん'}</p> {/* ★ ユーザー名を濃い茶色に */}
                           <p className="text-xs text-gray-500 truncate mt-0.5">
-                            {user.profiles?.age ? `${user.profiles.age}歳` : ''}
+                            {user.profiles?.age ? `${user.profiles.age}歳` : '未設定'}
                             {user.profiles?.age && user.profiles?.residence ? ' / ' : ''}
-                            {user.profiles?.residence || (user.profiles?.age ? '' : '情報未設定')}
+                            {user.profiles?.residence || '情報未設定'}
                           </p>
+                        </div>
+                        {/* 右側カラム */}
+                        <div className="flex flex-col items-end space-y-1.5 shrink-0 ml-2">
+                          <p className="text-xs text-green-600 font-medium flex items-center">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 inline-block animate-pulse"></span>
+                            オンライン
+                          </p>
+                          <button
+                            onClick={() => !initiatingChatWith && handleInitiateChat(user.id)}
+                            disabled={!!initiatingChatWith}
+                            className={`px-3 py-1 text-xs bg-[#4a2e19] text-white font-semibold rounded-full shadow hover:bg-[#6d4c3a] transition duration-200 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-[#6F4E37] ${initiatingChatWith ? 'opacity-60 cursor-not-allowed' : ''}`}
+                          >
+                            話しかける
+                          </button>
                         </div>
                       </div>
                       {/* 自己紹介文 */}
-                      <div className="text-xs text-gray-600 mb-3 border-t border-gray-200 pt-2 mt-2">
-                        <p className="h-10 overflow-hidden line-clamp-2"> {/* 自己紹介は2行まで */}
+                      <div className="text-xs text-gray-600 border-t border-[#6F4E37]/20 pt-2 mt-2 flex-grow min-h-[40px]"> {/* ★ 自己紹介文のテキスト色を調整 */}
+                        <p className="line-clamp-2"> 
                           {user.profiles?.bio || '自己紹介はありません。'}
                         </p>
                       </div>
                     </div>
-                    {/* 「話しかける」ボタン (カード下部に配置) */}
-                    <button
-                      onClick={() => !initiatingChatWith && handleInitiateChat(user.id)}
-                      disabled={!!initiatingChatWith}
-                      className={`w-full mt-auto px-3 py-2 text-sm bg-[#A0522D] text-white font-semibold rounded-md shadow hover:bg-[#8B4513] transition duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#6F4E37] ${initiatingChatWith ? 'opacity-60 cursor-not-allowed' : ''}`}
-                    >
-                      話しかける
-                    </button>
                   </div>
                 )
               ))}
@@ -501,6 +488,7 @@ return (
           )}
         </div>
       </main>
+      {/* ★★★ ここまでが置き換える <main> タグの範囲です ★★★ */}
 
       <footer className="z-10 mt-16 mb-8 text-center text-sm text-[#6F4E37]/70">
         <p>&copy; {new Date().getFullYear()} Momentos Café. All rights reserved.</p>

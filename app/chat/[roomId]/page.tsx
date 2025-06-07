@@ -191,7 +191,7 @@ export default function PrivateChatPage() {
       <MessageLogModal isOpen={isMessageLogModalOpen} onClose={() => setIsMessageLogModalOpen(false)} messages={messages} currentUserId={currentUser.id} otherUserNickname={otherUserNickname} />
 
       <div 
-        className="fixed inset-0 bg-cover bg-center opacity-40 z-[-1]"
+        className="fixed inset-0 bg-cover bg-center opacity-80 z-[-1]"
         style={{ backgroundImage: "url('/cafe-bg.jpg')" }}
       ></div>
       <div className="fixed inset-0 bg-black/10 z-[-1]"></div>
@@ -211,53 +211,72 @@ export default function PrivateChatPage() {
         <div className="relative w-full max-w-md flex flex-col items-center justify-end h-auto min-h-[150px] max-h-[45vh]">
           {/* ★ <img> を <Image /> に変更 */}
           <Image 
-            src="/silhouette-female.png" 
+            src="/girl_img01.png" 
             alt="相手のシルエット" 
             width={200}  // ★ 画像の固有の幅 (ピクセル単位) - 実際の画像に合わせて調整してください
             height={350} // ★ 画像の固有の高さ (ピクセル単位) - 実際の画像に合わせて調整してください
-            className="max-h-full w-auto object-contain opacity-40" 
+            className="max-h-full w-auto object-contain opacity-90" 
             priority // ページ読み込み時に優先的に表示する場合
           />
         </div>
 
-        <div className="relative w-full max-w-xl bg-white/50 backdrop-blur-md rounded-2xl shadow-xl p-4 pt-10 -mt-[25px] z-10">
-          <div className="absolute -top-4 left-4 bg-[#6F4E37] text-white px-5 py-2 rounded-lg shadow-lg text-md font-semibold z-20">
-            {otherUserNickname}
-          </div>
-          <div className="h-12 p-2.5 rounded-md text-sm text-gray-700 overflow-hidden line-clamp-2 custom-scrollbar-thin [text-shadow:_1px_1px_1px_rgb(255_255_255_/_0.2)]">
-            {latestOpponentMessage ? (
-              <p className="whitespace-pre-wrap break-words">{latestOpponentMessage.content}</p>
-            ) : (
-              <p className="italic text-gray-500">（会話を始めましょう…）</p>
-            )}
-          </div>
-          <button
-            onClick={() => setIsMessageLogModalOpen(true)}
-            className="absolute top-3 right-3 text-xs bg-black/5 hover:bg-black/10 text-gray-600 hover:text-gray-800 font-medium py-1 px-2.5 rounded-md shadow-sm transition-colors z-20"
-          >
-            ログ全体
-          </button>
-        </div>
+        {/* 下部：メッセージ関連UI */}
+        <div className="w-full max-w-2xl flex-shrink-0 flex flex-col space-y-3">
+          
+          {/* ★★★ ここからが修正対象のメッセージウィンドウ ★★★ */}
+           {/* メッセージウィンドウ */}
+           <div className="relative w-full px-4">
+            <div className="relative bg-[#F5F0E8]/95 pt-10 p-5 rounded-lg shadow-lg border-2 border-[#5C3A21]/50"> {/* ★ 枠線の色を調整 */}
+              {/* 名前表示タグ */}
+              <div className="absolute -top-4 left-3 bg-[#4a2e19] text-white px-4 py-1.5 rounded-md shadow-md text-sm font-semibold tracking-wider"> {/* ★ 背景色をより濃い茶色に */}
+                {otherUserNickname}
+              </div>
+              
+              {/* 最新メッセージ表示 */}
+              <div className="h-20 text-lg text-[#4A3B31] overflow-y-auto custom-scrollbar-thin">
+                {latestOpponentMessage ? (
+                  // ★ font-semibold を追加して文字を太くする ★
+                  <p className="whitespace-pre-wrap break-words leading-relaxed font-semibold">{latestOpponentMessage.content}</p>
+                ) : (
+                  <p className="italic text-gray-500 text-base">（会話を始めましょう…）</p>
+                )}
+              </div>
 
-        <form onSubmit={handleSendMessage} className="w-full max-w-xl flex items-center space-x-2 p-2 bg-white/60 backdrop-blur-sm rounded-full shadow-lg mt-3 z-10">
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="メッセージをどうぞ..."
-            className="flex-1 p-2.5 border-none bg-transparent focus:outline-none focus:ring-0 text-sm text-gray-800 placeholder-gray-500"
-            disabled={!currentUser}
-          />
-          <button
-            type="submit"
-            className="p-2.5 bg-[#8B4513] text-white font-semibold rounded-full hover:bg-[#A0522D] transition duration-200 disabled:opacity-50"
-            disabled={!currentUser || !newMessage.trim()}
+              {/* メッセージログ閲覧ボタン */}
+              <button
+                onClick={() => setIsMessageLogModalOpen(true)}
+                className="absolute top-2 right-2 text-xs bg-[#6F4E37]/10 hover:bg-[#6F4E37]/20 text-[#6F4E37] font-medium py-1 px-2 rounded-md shadow-sm transition-colors"
+              >
+                ログ
+              </button>
+            </div>
+          </div>
+          {/* ★★★ ここまでがメッセージウィンドウ ★★★ */}
+
+
+          <form 
+            onSubmit={handleSendMessage} 
+            className="flex items-center space-x-2 p-1.5 bg-[#F5F0E8]/95 rounded-full shadow-lg border-2 border-[#5C3A21]/40 mt-3 z-10" // ★ 背景、角丸、枠線を調整
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-              <path d="M3.105 3.105a.75.75 0 01.814-.102l14.25 4.25a.75.75 0 010 1.504l-14.25 4.25a.75.75 0 01-.916-.996V3.207a.75.75 0 01.102-.102z" />
-            </svg>
-          </button>
-        </form>
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="メッセージをどうぞ..."
+              className="flex-1 p-2.5 border-none bg-transparent focus:outline-none focus:ring-0 text-sm text-gray-800 placeholder-gray-500" // ★ 背景を透明に、テキスト色を変更
+              disabled={!currentUser}
+            />
+            <button
+              type="submit"
+              className="p-3 bg-[#5C3A21] text-white font-semibold rounded-full hover:bg-[#4a2e19] transition duration-200 disabled:opacity-50" // ★ 送信ボタンの色をより濃い茶色に
+              disabled={!currentUser || !newMessage.trim()}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                <path d="M3.105 3.105a.75.75 0 01.814-.102l14.25 4.25a.75.75 0 010 1.504l-14.25 4.25a.75.75 0 01-.916-.996V3.207a.75.75 0 01.102-.102z" />
+              </svg>
+            </button>
+          </form>
+      </div>
       </div>
     </>
   );
