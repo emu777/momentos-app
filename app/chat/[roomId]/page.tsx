@@ -75,6 +75,29 @@ export default function PrivateChatPage() {
     }
   }, [chatRoomInfo, currentUser]);
 
+    // ★★★ ブラウザバックを制御するための新しい useEffect フック ★★★
+    useEffect(() => {
+        // ページに入ったときに、現在のページの履歴を追加
+        history.pushState(null, '', location.href);
+    
+        // ブラウザの「戻る」「進む」が押されたときのイベントリスナー
+        const handlePopState = (event: PopStateEvent) => {
+          // ユーザーが「戻る」を押しても、再度同じページの履歴を追加して移動を防ぐ
+          history.pushState(null, '', location.href);
+          console.log('[PrivateChatPage] Browser back button disabled.');
+          // ここで「戻るボタンは使えません」というトースト通知を表示しても良い
+          // toast.warn('この画面ではブラウザの戻るボタンは使用できません。');
+        };
+    
+        // イベントリスナーを登録
+        window.addEventListener('popstate', handlePopState);
+    
+        // コンポーネントがアンマウントされる（ページを離れる）際に、イベントリスナーを解除するクリーンアップ関数
+        return () => {
+          window.removeEventListener('popstate', handlePopState);
+        };
+      }, []); // 空の依存配列なので、このコンポーネントのマウント時に一度だけ実行される
+
   // メッセージ取得とリアルタイム更新 + 最新相手メッセージの更新
   useEffect(() => {
     if (!currentUser || !chatRoomInfo || !roomId || !session) return;
