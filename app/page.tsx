@@ -453,7 +453,6 @@ return (
             style={{ backgroundImage: "url('/wood_kanban_01.png')" }}
           >
             <h2 className="text-2xl sm:text-3xl font-bold text-white [text-shadow:_2px_2px_4px_rgb(0_0_0_/_0.6)]">
-              現在の空席
             </h2>
           </div>
 
