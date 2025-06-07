@@ -75,28 +75,31 @@ export default function PrivateChatPage() {
     }
   }, [chatRoomInfo, currentUser]);
 
-   // ★★★ ブラウザバックを制御するための新しい useEffect フック ★★★
+  // ★★★ この「ブラウザバックを制御するためのuseEffect」を以下のように修正 ★★★
   useEffect(() => {
-    // ページに入ったときに、現在のページの履歴を追加
+    // ページに入ったときに、現在のページの履歴エントリを追加
+    // これにより、ユーザーが最初に「戻る」を押したときに、このページ自体が前のページとして扱われる
     history.pushState(null, '', location.href);
 
-    // ブラウザの「戻る」「進む」が押されたときのイベントリスナー
-    const handlePopState = (_: PopStateEvent) => { // ★ _event を、単なるアンダースコア '_' に変更
-      // ユーザーが「戻る」を押しても、再度同じページの履歴を追加して移動を防ぐ
+    const handlePopState = (_: PopStateEvent) => {
+      // ユーザーが「戻る」を押したことを検知
+
+      // 再度履歴を追加して、モーダルを閉じてもページが戻ってしまわないようにする
       history.pushState(null, '', location.href);
-      console.log('[PrivateChatPage] Browser back button disabled.');
-      toast('この画面ではブラウザの戻るボタンは使用できません。');
+      
+      // ★ 確認モーダルを開くためのステートを更新する ★
+      console.log('[PrivateChatPage] Browser back button triggered. Opening confirm modal.');
+      setIsConfirmLeaveModalOpen(true);
     };
 
-    // イベントリスナーを登録
+    // 'popstate'イベント（ブラウザの戻る/進むが押されたとき）のリスナーを登録
     window.addEventListener('popstate', handlePopState);
 
-    // コンポーネントがアンマウントされる（ページを離れる）際に、イベントリスナーを解除するクリーンアップ関数
+    // クリーンアップ関数: コンポーネントがアンマウントされる際にリスナーを解除
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
   }, []); // 空の依存配列なので、このコンポーネントのマウント時に一度だけ実行される
-  // ★★★ ブラウザバックを制御するための新しい useEffect フック ★★★
 
   // メッセージ取得とリアルタイム更新 + 最新相手メッセージの更新
   useEffect(() => {

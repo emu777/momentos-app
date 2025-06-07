@@ -2,29 +2,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase'; // あなたのSupabaseクライアントのパス
 import { User, Session } from '@supabase/supabase-js';
-import { M_PLUS_Rounded_1c } from 'next/font/google'; // ★ インポートするフォントを変更
-import './globals.css';
-import { Toaster } from 'react-hot-toast';
-
-// ★ フォントオブジェクトを初期化
-const mplusRounded1c = M_PLUS_Rounded_1c({
-  weight: ['400', '500', '700', '800'], // 使用したいフォントの太さを指定
-  subsets: ['latin'], // 'japanese' サブセットが提供されていればそちらが良いですが、'latin' でカバーされることが多いです
-  display: 'swap',
-});
+import './globals.css'; // グローバルCSS
+import { Toaster } from 'react-hot-toast'; // react-hot-toast
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // ★★★ すべてのフックは、このトップレベルに記述します ★★★
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [session, setSession] = useState<Session | null>(null); // ★ESLint無効化コメント追加
+  const [session, setSession] = useState<Session | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isClientLoadedForLayout, setIsClientLoadedForLayout] = useState(false);
+  // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
+  // 1. 認証状態の監視useEffect
   useEffect(() => {
     setIsClientLoadedForLayout(true);
 
@@ -43,65 +38,55 @@ export default function RootLayout({
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, []); // このeffectはマウント時に一度だけ実行
 
-
+  // 2. アプリケーション全体でのオンラインステータス管理 useEffect (これがエラーの出ていたuseEffect)
   useEffect(() => {
+    // フック内のロジックは、ガード条件 (if文) から始めることができます
     if (!isClientLoadedForLayout || !currentUser) {
-      return;
+      return; // currentUser が null なら何もしない
     }
+
     const userId = currentUser.id;
+    
     const updateUserOnlineStatus = async (isOnline: boolean) => {
+      // currentUserのチェックを再度行うことで、より安全に
       if (!currentUser || currentUser.id !== userId) return;
       try {
-        const { error } = await supabase.from('user_statuses').upsert(
+        const { error } = await supabase
+          .from('user_statuses')
+          .upsert(
             { user_id: userId, is_online: isOnline, last_active_at: new Date().toISOString() },
             { onConflict: 'user_id' }
           );
-        if (error) { /* console.error... */ }
-      } catch (e: unknown) { // ★ e の型は unknown のまま
-        let errorMessage = "レイアウトで不明なエラーが発生しました。";
-        let errorDetailsForLog: string | undefined = undefined;
-      
-        if (e instanceof Error) {
-          errorMessage = e.message;
-          errorDetailsForLog = e.stack || e.message;
-        } else if (typeof e === "string") {
-          errorMessage = e;
-          errorDetailsForLog = e;
-        } else {
-          try {
-            errorDetailsForLog = JSON.stringify(e);
-          } catch {
-            errorDetailsForLog = String(e);
-          }
+        if (error) {
+          console.error(`[Layout OnlineEffect] Error setting user ${userId} status to ${isOnline}:`, error);
         }
-      
-        // ★★★ キャッチしたエラーオブジェクト 'e' (またはそこから抽出した情報) をログに出力 ★★★
-        console.error("Layout error caught:", errorMessage, "Details:", errorDetailsForLog, "Original error object:", e); 
-      
-        // 必要であれば、ユーザーにエラーを通知する処理（ただし、layout.tsx で直接UI変更は難しい）
-        // toast.error("アプリケーションの読み込み中にエラーが発生しました。"); // 例
+      } catch (e) {
+        console.error(`[Layout OnlineEffect] Exception setting user ${userId} status to ${isOnline}:`, e);
       }
     };
+
     updateUserOnlineStatus(true);
-    const onlineIntervalId = setInterval(() => updateUserOnlineStatus(true), 60 * 1000); // ★ const に変更済みのはず
-    const handleBeforeUnload = () => { /* ... */ };
+    const onlineIntervalId = setInterval(() => updateUserOnlineStatus(true), 60 * 1000);
+
+    const handleBeforeUnload = () => {
+      // ブラウザを閉じる際のオフライン化はベストエフォート
+    };
     window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // クリーンアップ関数
     return () => {
       clearInterval(onlineIntervalId);
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      if (currentUser?.id) { // ★ クリーンアップ時も最新の currentUser を参照
-        updateUserOnlineStatus(false); 
-      }
+      // ログアウト時 (currentUser が null になる時) にオフラインにする
+      updateUserOnlineStatus(false); 
     };
-  }, [isClientLoadedForLayout, currentUser]);
-
+  }, [isClientLoadedForLayout, currentUser]); // 依存配列
 
   return (
     <html lang="ja">
-      {/* ★ body タグにフォントのクラス名を適用 */}
-      <body className={`${mplusRounded1c.className} antialiased`}>
+      <body>
         <Toaster position="top-center" />
         {children}
       </body>
