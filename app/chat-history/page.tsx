@@ -9,7 +9,7 @@ import Link from 'next/link'; // Link をインポート
 import toast, { Toaster } from 'react-hot-toast'; // Toasterをインポート
 
 // 型定義 (あなたのプロジェクトの型定義ファイルのパスに合わせてください)
-import { _Profile, ChatHistoryItem, ChatRequest } from '../../lib/types'; 
+import { ChatHistoryItem, ChatRequest } from '../../lib/types'; 
 // もし型定義をこのファイルにローカルで持ちたい場合は、
 // UserLeftPayload など、必要な他の型も定義してください。
 // interface Profile { ... }
