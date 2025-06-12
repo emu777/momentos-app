@@ -1,40 +1,40 @@
 // lib/hooks/useLocalStorageState.ts
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 function useLocalStorageState<T>(
   key: string,
   defaultValue: T
 ): [T, React.Dispatch<React.SetStateAction<T>>] {
   
-  const [state, setState] = useState<T>(defaultValue); // ★ サーバーでは必ずデフォルト値で初期化
-
-  // ★ クライアントサイドでのみ、マウント後にlocalStorageから値を読み込む
-  useEffect(() => {
-    // このeffectはクライアントでの初回マウント時に一度だけ実行される
+  const [state, setState] = useState<T>(() => {
+    // この関数は、クライアントサイドでの初回レンダリング時に一度だけ実行されます。
+    // サーバーサイドでは実行されないように、windowオブジェクトの存在を確認します。
+    if (typeof window === 'undefined') {
+      return defaultValue;
+    }
     try {
       const storedValue = window.localStorage.getItem(key);
-      if (storedValue !== null) {
-        setState(JSON.parse(storedValue));
-      }
+      // localStorageに保存された値があればそれを使い、なければ初期値を使います。
+      return storedValue ? JSON.parse(storedValue) : defaultValue;
     } catch (error) {
       console.error('Error reading from localStorage for key “' + key + '”:', error);
+      return defaultValue;
     }
-  }, [key]); // keyが変わることは通常ないが、依存配列に含めておく
+  });
 
-  // ★ クライアントサイドでのみ、stateが変更されたらlocalStorageに書き込む
+  // このeffectは、stateが変更されるたびにlocalStorageに値を書き込みます。
   useEffect(() => {
-    // stateが初期値(defaultValue)のままの場合は書き込まない、という選択も可能
-    // (ただし、ユーザーが意図してデフォルト値に戻した場合も書き込まれないため注意)
-    // if (state !== defaultValue) {
+    // サーバーサイドでは実行しないようにします。
+    if (typeof window !== 'undefined') {
       try {
         window.localStorage.setItem(key, JSON.stringify(state));
       } catch (error) {
         console.error('Error writing to localStorage for key “' + key + '”:', error);
       }
-    // }
-  }, [key, state]);
+    }
+  }, [key, state]); // keyまたはstateが変わった時のみ実行
 
   return [state, setState];
 }

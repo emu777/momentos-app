@@ -68,15 +68,22 @@ export default function ChatHistoryPage() {
   }, [router]);
 
   // チャット履歴の取得関数
+  // app/chat-history/page.tsx 内
+
+// app/chat-history/page.tsx 内
+
+  // app/chat-history/page.tsx 内
+
   const fetchChatHistory = useCallback(async () => {
     if (!currentUser) return;
     setLoading(true);
-    setPageError(null);
+    setPageError(null); // pageError はあなたのエラー用ステート名
 
     try {
+      // 1. 自分が参加しているチャットルームを取得 (affection_level も取得)
       const { data: rooms, error: roomsError } = await supabase
         .from('chat_rooms')
-        .select('id, user1_id, user2_id')
+        .select('id, user1_id, user2_id, affection_level')
         .or(`user1_id.eq.${currentUser.id},user2_id.eq.${currentUser.id}`);
 
       if (roomsError) throw roomsError;
@@ -87,54 +94,68 @@ export default function ChatHistoryPage() {
         return;
       }
 
-      const otherUserIds = rooms.map(room => 
-        room.user1_id === currentUser.id ? room.user2_id : room.user1_id
-      );
-      const uniqueOtherUserIds = [...new Set(otherUserIds)];
-
-      const profilesMap = new Map<string, Profile>(); // ★ let から const に変更
-      const onlineStatusMap = new Map<string, { is_online: boolean }>(); // ★ let から const に変更
-
-      if (uniqueOtherUserIds.length > 0) {
-        const { data: profilesData, error: profilesFetchError } = await supabase // error 変数名変更
-          .from('profiles')
-          .select('user_id, nickname') 
-          .in('user_id', uniqueOtherUserIds);
-
-        if (profilesFetchError) console.error('Error fetching profiles for chat history:', profilesFetchError);
-        else if (profilesData) profilesData.forEach(p => profilesMap.set(p.user_id, p as Profile));
-
-        const { data: statusesData, error: statusesFetchError } = await supabase // error 変数名変更
-          .from('user_statuses')
-          .select('user_id, is_online')
-          .in('user_id', uniqueOtherUserIds);
-
-        if (statusesFetchError) console.error('Error fetching user statuses for chat history:', statusesFetchError);
-        else if (statusesData) statusesData.forEach(s => onlineStatusMap.set(s.user_id, { is_online: s.is_online }));
-      }
-
-      const resolvedHistoryItems = rooms.map((room): ChatHistoryItem => {
+      // 2. 各ルームの相手情報と最新メッセージを取得
+      const historyItemsPromises = rooms.map(async (room) => {
         const otherUserId = room.user1_id === currentUser.id ? room.user2_id : room.user1_id;
-        const profile = profilesMap.get(otherUserId);
-        const status = onlineStatusMap.get(otherUserId);
+
+        // 相手のプロフィール取得
+        const { data: profile } = await supabase
+          .from('profiles').select('nickname').eq('user_id', otherUserId).single();
+        
+        // そのルームの最新メッセージを1件取得
+        const { data: lastMessage } = await supabase
+          .from('messages')
+          .select('content, created_at')
+          .eq('room_id', room.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        // 相手のオンライン状態を取得
+        const oneMinuteAgoISO = new Date(Date.now() - 60 * 1000).toISOString();
+        const { data: onlineStatus, error: statusError } = await supabase
+            .from('user_statuses')
+            .select('user_id')
+            .eq('user_id', otherUserId)
+            .eq('is_online', true)
+            .gte('last_active_at', oneMinuteAgoISO)
+            .single();
+
+        if (statusError && statusError.code !== 'PGRST116') { // 'PGRST116' は行が見つからないエラー
+            console.error('Error fetching status for history:', statusError);
+        }
+        
+        // ★★★ ChatHistoryItem の定義に合わせてオブジェクトを作成 ★★★
         return {
           roomId: room.id,
           otherUserId: otherUserId,
-          otherUserNickname: profile?.nickname || '不明なユーザー',
-          isOnline: status?.is_online || false,
+          otherUserNickname: profile?.nickname || '名無しさん',
+          affectionLevel: room.affection_level || 0,
+          lastMessage: lastMessage?.content || null,
+          lastMessageAt: lastMessage?.created_at || null,
+          isOnline: !!onlineStatus, // オンライン状態をtrue/falseで設定
+          unreadCount: 0, // 未読機能は別途実装
         };
       });
-      
-      // TODO: ここで最終メッセージ時刻などでソートするロジックを追加可能
-      setChatHistoryItems(resolvedHistoryItems);
 
-    } catch (err: unknown) { // ★ any を unknown に変更
-      console.error('Error fetching chat history:', err);
-      let message = 'チャット履歴の取得に失敗しました。';
-      if (err instanceof Error) {
-        message = `チャット履歴取得エラー: ${err.message}`;
+      const historyItems = await Promise.all(historyItemsPromises);
+      
+      // 最新メッセージの日時でソート
+      historyItems.sort((a, b) => {
+        if (!a.lastMessageAt) return 1;
+        if (!b.lastMessageAt) return -1;
+        return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+      });
+
+      setChatHistoryItems(historyItems);
+
+    } catch (error) {
+      console.error("Error fetching chat history:", error);
+      if (error instanceof Error) {
+        toast.error(`チャット履歴の取得に失敗: ${error.message}`);
+      } else {
+        toast.error("チャット履歴の取得中に不明なエラーが発生しました。");
       }
-      setPageError(message);
     } finally {
       setLoading(false);
     }

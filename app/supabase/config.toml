@@ -1,0 +1,37 @@
+# supabase/config.toml
+
+[db]
+port = 54322 # この行は変更なし (diffには表示されていませんが、文脈上維持)
+shadow_port = 54320
+major_version = 17
+root_key = ""
+[db.pooler]
+enabled = false
+pool_mode = "transaction"
+default_pool_size = 15
+max_client_conn = 100
+# [studio] セクションはdiffに含まれていないため、変更の必要はありません。
+# もしクラウド側にstudioセクションの設定があれば、それも合わせることを検討してください。
+# 今回のdiffでは表示されていません。
+
+# For local development, it is recommended to use the supabase/README.md
+# file to start the services. This will ensure that the services are
+# For more information, refer to https://supabase.com/docs/guides/auth
+
+[auth]
+enabled = true # この行は変更なし (diffには表示されていませんが、文脈上維持)
+site_url = "http://localhost:3000"
+additional_redirect_urls = []
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true # この行は変更なし (diffには表示されていませんが、文脈上維持)
+enable_confirmations = true
+secure_password_change = false
+max_frequency = "1m0s"
+otp_length = 6
+otp_expiry = 3600
+[auth.email.template]

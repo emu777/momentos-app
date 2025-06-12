@@ -7,9 +7,14 @@ export interface Profile {
     age?: number;
     residence?: string;
     bio?: string;
+    topic?: string;
     // 必要に応じて他のプロフィール項目 (例: avatar_url?: string;)
   }
-  
+  export interface UserWithProfile { // User と Profile を組み合わせた型
+  id: string;
+  last_active_at?: string; // user_statuses から
+  profiles: Profile | null; // profiles テーブルのデータ
+}
   // メッセージの型
   export interface Message {
     id: string;
@@ -42,23 +47,33 @@ export interface Profile {
   
   // チャット履歴ページのリストアイテムの型
   export interface ChatHistoryItem {
-    roomId: string;
-    otherUserId: string;
-    otherUserNickname: string | null;
-    isOnline: boolean;
-    // 必要に応じて最終メッセージやタイムスタンプなどを追加
-    // last_message_content?: string | null;
-    // last_message_at?: string | null;
-    // unread_count?: number;
-  }
-  
-  // オンラインユーザーリスト用の型 (app/page.tsx で使用)
-  export interface UserWithProfile {
-    id: string; // auth.users.id と同義
-    last_active_at?: string;
-    profiles: Profile | null; // Profile型を参照
-  }
-  
+  roomId: string;
+  otherUserId: string;
+  otherUserNickname: string;
+  affectionLevel: number;
+  otherUserBio?: string; // ★ パートナーの「自己紹介文」
+  otherUserTopic?: string; // ★ パートナーの「今日の話題」への入力内容
+  lastMessage: string | null;
+  lastMessageAt: string | null;
+  isOnline: boolean;
+  unreadCount: number;
+}
+//今日の話題の型
+  export interface DailyTopic {
+  id: number;
+  topic_text: string;
+  created_at: string;
+}
+
+//話題サイクル管理の型
+
+export interface TopicCycleStatus {
+  config_id: string;
+  current_topic_id: number | null;
+  last_changed_at: string | null; // ISO形式の文字列
+  used_topic_ids: number[];
+}
+
   // 相手退出通知のペイロード型 (app/chat/[roomId]/page.tsx で使用)
   export interface UserLeftPayload {
     userIdWhoLeft: string;
@@ -68,13 +83,6 @@ export interface Profile {
     isOpen: boolean;
     onClose: () => void;
     messages: Message[];
-    currentUserId: string;
-    otherUserNickname: string;
-  }
-  export interface MessageLogModalProps { // ★ これが MessageLogModal のプロパティ型
-    isOpen: boolean;
-    onClose: () => void;
-    messages: Message[]; // ★ Message 型を参照
     currentUserId: string;
     otherUserNickname: string;
   }
