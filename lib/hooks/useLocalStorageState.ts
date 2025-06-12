@@ -1,7 +1,7 @@
 // lib/hooks/useLocalStorageState.ts
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 function useLocalStorageState<T>(
   key: string,

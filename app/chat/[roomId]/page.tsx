@@ -9,7 +9,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import Image from 'next/image';
 
 // あなたの型定義ファイルからインポート (パスは実際の場所に合わせてください)
-import { Message, ChatRoomInfo, UserLeftPayload, Profile } from '../../../lib/types';
+import { Message, ChatRoomInfo, UserLeftPayload, _Profile } from '../../../lib/types';
 
 // モーダルコンポーネントのインポート
 import PartnerLeftModal from '../../components/PartnerLeftModal';

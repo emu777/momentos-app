@@ -53,7 +53,7 @@ export default function HomePage() {
   const [hasMounted, setHasMounted] = useState(false);
 
   // 今日の話題と一言関連のステート
-  const [dbDailyTopics, setDbDailyTopics] = useState<DailyTopic[]>([]); // DBから取得した話題リスト
+  const [setDbDailyTopics] = useState<DailyTopic[]>([]); // DBから取得した話題リスト
   const [todayTopicDisplay, setTodayTopicDisplay] = useState(''); // 表示用の「今日の話題」
   const [currentUserTopicInput, setCurrentUserTopicInput] = useState(''); // ユーザーが入力する「今日の話題」への返答
   const [isSavingTopic, setIsSavingTopic] = useState(false); // 保存中のフラグ
