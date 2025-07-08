@@ -28,7 +28,7 @@ export default function GamePage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
+    <div className="h-screen w-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4">
       {/* GameCanvasは内部でuseAuth()を使えるため、propを渡す必要がなくなります */}
       <DynamicGameCanvas />
 

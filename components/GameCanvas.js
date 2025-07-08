@@ -311,10 +311,10 @@ const GameCanvas = () => {
   const scaledHeight = CAFE_MAP_HEIGHT * scale;
 
   return ( // GameCanvasコンポーネントは、ゲームキャンバス部分のみをレンダリング
-    <div className="flex flex-col items-center" style={{ width: scaledWidth }}>
+    <>
       {/* スケーリングを適用するためのラッパーdiv */}
-      <div style={{ width: scaledWidth, height: scaledHeight, position: 'relative' }}>
-        <div 
+      <div style={{ width: scaledWidth, height: scaledHeight }}>
+        <div
           className="relative border-2 border-gray-700 bg-gray-800"
           style={{
             width: CAFE_MAP_WIDTH,
@@ -351,7 +351,7 @@ const GameCanvas = () => {
       </div>
 
       {/* チャットUI */}
-      <div className="w-full mt-4 bg-gray-800 p-4 rounded-lg shadow-lg">
+      <div className="w-full mt-4 bg-gray-800 p-4 rounded-lg shadow-lg" style={{ maxWidth: scaledWidth }}>
         <h2 className="text-xl font-semibold mb-2">チャット</h2>
         <div className="h-40 overflow-y-auto border border-gray-700 p-2 rounded mb-2 bg-gray-900">
           {chatMessages.map((msg) => (
@@ -377,7 +377,7 @@ const GameCanvas = () => {
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
