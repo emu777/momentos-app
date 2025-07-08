@@ -29,8 +29,6 @@ export default function GamePage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
-      <h1 className="text-3xl font-bold mb-4">オンラインカフェバー</h1>
-
       {/* GameCanvasは内部でuseAuth()を使えるため、propを渡す必要がなくなります */}
       <DynamicGameCanvas />
 
@@ -38,7 +36,6 @@ export default function GamePage() {
         className="mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200"
         onClick={async () => {
           await supabase.auth.signOut();
-          // 上記のuseEffectがセッションの変更を検知してリダイレクトを実行します
         }}
       >
         ログアウト

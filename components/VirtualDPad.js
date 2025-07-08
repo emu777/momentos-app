@@ -22,7 +22,7 @@ const VirtualDPad = ({ onKeyPress, onKeyRelease }) => {
     color: 'white',
     fontSize: '24px',
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    userSelect: 'none', // テキスト選択を防ぐ
+    userSelect: 'none',
     WebkitTapHighlightColor: 'transparent', // タップ時のハイライトを消す
   };
 
