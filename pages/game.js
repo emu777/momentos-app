@@ -28,7 +28,7 @@ export default function GamePage() {
   }
 
   return (
-    <div className="h-screen w-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4">
+    <div className="h-screen w-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4 overflow-hidden">
       {/* GameCanvasは内部でuseAuth()を使えるため、propを渡す必要がなくなります */}
       <DynamicGameCanvas />
 
@@ -36,10 +36,8 @@ export default function GamePage() {
         className="mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200"
         onClick={async () => {
           await supabase.auth.signOut();
-        }}
-      >
-        ログアウト
-      </button>
+        }}>
+        ログアウト </button>
     </div>
   );
 }
