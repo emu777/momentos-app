@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const CAFE_MAP_WIDTH = 800;
 const CAFE_MAP_HEIGHT = 600;
+const CHAT_UI_HEIGHT = 220; // チャットUIのおおよその高さ
 const PLAYER_SIZE = 32;
 
 const GameCanvas = () => {
@@ -28,7 +29,7 @@ const GameCanvas = () => {
   // DB更新を間引くためのRef
   const updateTimeoutRef = useRef(null);
 
-  const { width: windowWidth } = useWindowSize();
+  const { width: windowWidth, height: windowHeight } = useWindowSize();
   const [cafeBgImage] = useImage('/assets/cafe_background.png');
 
   useEffect(() => {
@@ -304,54 +305,63 @@ const GameCanvas = () => {
     return <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">Loading or redirecting...</div>;
   }
 
-  // 画面幅に基づいてキャンバスのスケールを計算
-  // (windowWidth - 32) は親要素のpaddingを考慮
-  const scale = windowWidth ? Math.min(1, (windowWidth - 32) / CAFE_MAP_WIDTH) : 1;
-  const scaledWidth = CAFE_MAP_WIDTH * scale;
-  const scaledHeight = CAFE_MAP_HEIGHT * scale;
+  // 利用可能なスペースに基づいてキャンバスのスケールを計算
+  const availableWidth = windowWidth || 0;
+  const availableHeight = (windowHeight || 0) - CHAT_UI_HEIGHT;
+  const scaleX = availableWidth / CAFE_MAP_WIDTH;
+  const scaleY = availableHeight / CAFE_MAP_HEIGHT;
+  const scale = Math.min(scaleX, scaleY, 1); // 1倍以上には拡大しない
 
   return ( // GameCanvasコンポーネントは、ゲームキャンバス部分のみをレンダリング
-    <div className="flex flex-col items-center">
-      {/* スケーリングを適用するためのラッパーdiv */}
-      <div style={{ width: scaledWidth, height: scaledHeight, position: 'relative' }}>
-        <div 
-          className="relative border-2 border-gray-700 bg-gray-800"
-          style={{
-            width: CAFE_MAP_WIDTH,
-            height: CAFE_MAP_HEIGHT,
-            transform: `scale(${scale})`,
-            transformOrigin: 'top left',
+    <div className="h-full w-full flex flex-col bg-gray-900">
+      {/* ゲームエリア */}
+      <div className="flex-grow relative flex items-center justify-center overflow-hidden">
+        <div
+            style={{
+              width: CAFE_MAP_WIDTH,
+              height: CAFE_MAP_HEIGHT,
+              transform: `scale(${scale})`,
+              transformOrigin: 'center center',
+            }}
+          >
+            {isTouchDevice && (
+              <VirtualDPad
+                onKeyPress={handleVirtualKeyPress}
+                onKeyRelease={handleVirtualKeyRelease}
+              />
+            )}
+            <Stage width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT}>
+              <Layer>
+                {cafeBgImage && (
+                  <KonvaImage image={cafeBgImage} x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} />
+                )}
+                {!cafeBgImage && (
+                  <Rect x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} fill="#6B4226" />
+                )}
+
+                {Object.values(otherPlayers).map((player) => (
+                  <PlayerAvatar key={player.id} player={player} isMe={false} />
+                ))}
+
+                {myPlayer && (
+                  <PlayerAvatar key={myPlayer.id} player={myPlayer} isMe={true} />
+                )}
+              </Layer>
+            </Stage>
+          </div>
+        {/* ログアウトボタン */}
+        <button
+          className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 z-20"
+          onClick={async () => {
+            await supabase.auth.signOut();
           }}
         >
-          {isTouchDevice && (
-            <VirtualDPad
-              onKeyPress={handleVirtualKeyPress}
-              onKeyRelease={handleVirtualKeyRelease}
-            />
-          )}
-          <Stage width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT}>
-            <Layer>
-              {cafeBgImage && (
-                <KonvaImage image={cafeBgImage} x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} />
-              )}
-              {!cafeBgImage && (
-                <Rect x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} fill="#6B4226" />
-              )}
-
-              {Object.values(otherPlayers).map((player) => (
-                <PlayerAvatar key={player.id} player={player} isMe={false} />
-              ))}
-
-              {myPlayer && (
-                <PlayerAvatar key={myPlayer.id} player={myPlayer} isMe={true} />
-              )}
-            </Layer>
-          </Stage>
-        </div>
+          ログアウト
+        </button>
       </div>
 
       {/* チャットUI */}
-      <div className="w-full mt-4 bg-gray-800 p-4 rounded-lg shadow-lg" style={{ width: scaledWidth }}>
+      <div className="w-full bg-gray-800 p-4 shadow-lg flex-shrink-0" style={{ height: `${CHAT_UI_HEIGHT}px` }}>
         <h2 className="text-xl font-semibold mb-2">チャット</h2>
         <div className="h-40 overflow-y-auto border border-gray-700 p-2 rounded mb-2 bg-gray-900">
           {chatMessages.map((msg) => (
