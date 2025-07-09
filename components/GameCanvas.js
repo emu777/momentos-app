@@ -7,6 +7,7 @@ import PlayerAvatar from './PlayerAvatar';
 import useWindowSize from '../hooks/useWindowSize';
 import VirtualDPad from './VirtualDPad'; // 作成したコンポーネントをインポート
 import { useAuth } from '../contexts/AuthContext';
+import GameMenu from './GameMenu'; // メニューコンポーネントをインポート
 
 const CAFE_MAP_WIDTH = 800;
 const CAFE_MAP_HEIGHT = 600;
@@ -311,53 +312,52 @@ const GameCanvas = () => {
   const scaleX = availableWidth / CAFE_MAP_WIDTH;
   const scaleY = availableHeight / CAFE_MAP_HEIGHT;
   const scale = Math.min(scaleX, scaleY, 1); // 1倍以上には拡大しない
+  const scaledWidth = CAFE_MAP_WIDTH * scale;
+  const scaledHeight = CAFE_MAP_HEIGHT * scale;
 
   return ( // GameCanvasコンポーネントは、ゲームキャンバス部分のみをレンダリング
-    <div className="h-full w-full flex flex-col bg-gray-900">
+    <div className="h-full w-full flex flex-col bg-gray-900 select-none">
       {/* ゲームエリア */}
       <div className="flex-grow relative flex items-center justify-center overflow-hidden">
-        <div
-            style={{
-              width: CAFE_MAP_WIDTH,
-              height: CAFE_MAP_HEIGHT,
-              transform: `scale(${scale})`,
-              transformOrigin: 'center center',
-            }}
-          >
-            {isTouchDevice && (
-              <VirtualDPad
-                onKeyPress={handleVirtualKeyPress}
-                onKeyRelease={handleVirtualKeyRelease}
-              />
-            )}
-            <Stage width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT}>
-              <Layer>
-                {cafeBgImage && (
-                  <KonvaImage image={cafeBgImage} x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} />
-                )}
-                {!cafeBgImage && (
-                  <Rect x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} fill="#6B4226" />
-                )}
+        {/* スケーリングされたサイズのコンテナ */}
+        <div style={{ width: scaledWidth, height: scaledHeight, position: 'relative' }}>
+          {/* メニューボタン */}
+          <GameMenu />
+          {/* スケールを適用するコンテナ */}
+          <div
+              style={{
+                width: CAFE_MAP_WIDTH,
+                height: CAFE_MAP_HEIGHT,
+                transform: `scale(${scale})`,
+                transformOrigin: 'top left',
+              }}
+            >
+              {isTouchDevice && (
+                <VirtualDPad
+                  onKeyPress={handleVirtualKeyPress}
+                  onKeyRelease={handleVirtualKeyRelease}
+                />
+              )}
+              <Stage width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT}>
+                <Layer>
+                  {cafeBgImage && (
+                    <KonvaImage image={cafeBgImage} x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} />
+                  )}
+                  {!cafeBgImage && (
+                    <Rect x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} fill="#6B4226" />
+                  )}
 
-                {Object.values(otherPlayers).map((player) => (
-                  <PlayerAvatar key={player.id} player={player} isMe={false} />
-                ))}
+                  {Object.values(otherPlayers).map((player) => (
+                    <PlayerAvatar key={player.id} player={player} isMe={false} />
+                  ))}
 
-                {myPlayer && (
-                  <PlayerAvatar key={myPlayer.id} player={myPlayer} isMe={true} />
-                )}
-              </Layer>
-            </Stage>
+                  {myPlayer && (
+                    <PlayerAvatar key={myPlayer.id} player={myPlayer} isMe={true} />
+                  )}
+                </Layer>
+              </Stage>
+            </div>
           </div>
-        {/* ログアウトボタン */}
-        <button
-          className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 z-20"
-          onClick={async () => {
-            await supabase.auth.signOut();
-          }}
-        >
-          ログアウト
-        </button>
       </div>
 
       {/* チャットUI */}

@@ -28,7 +28,7 @@ export default function GamePage() {
   }
 
   return (
-    <div className="h-screen w-screen bg-gray-900 text-white">
+    <div className="h-screen w-screen bg-gray-900 text-white overflow-hidden">
       {/* GameCanvasは内部でuseAuth()を使えるため、propを渡す必要がなくなります */}
       <DynamicGameCanvas />
     </div>
