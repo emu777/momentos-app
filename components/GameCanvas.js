@@ -307,11 +307,14 @@ const GameCanvas = () => {
   }
 
   // 利用可能なスペースに基づいてキャンバスのスケールを計算
+  // 画面サイズが取得できていない、またはチャットUIより小さい場合は0として扱う
   const availableWidth = windowWidth || 0;
-  const availableHeight = (windowHeight || 0) - CHAT_UI_HEIGHT;
-  const scaleX = availableWidth / CAFE_MAP_WIDTH;
-  const scaleY = availableHeight / CAFE_MAP_HEIGHT;
-  const scale = Math.min(scaleX, scaleY, 1); // 1倍以上には拡大しない
+  const availableHeight = Math.max(0, (windowHeight || 0) - CHAT_UI_HEIGHT);
+
+  // ゼロ除算を避け、常に正のスケール値を計算する
+  const scaleX = availableWidth > 0 ? availableWidth / CAFE_MAP_WIDTH : 0;
+  const scaleY = availableHeight > 0 ? availableHeight / CAFE_MAP_HEIGHT : 0;
+  const scale = Math.max(0, Math.min(scaleX, scaleY, 1)); // 1倍以上には拡大せず、負の値も防ぐ
   const scaledWidth = CAFE_MAP_WIDTH * scale;
   const scaledHeight = CAFE_MAP_HEIGHT * scale;
 
