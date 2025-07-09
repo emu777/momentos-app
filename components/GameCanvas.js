@@ -1,7 +1,6 @@
 // GameCanvas.js
 import React, { useState, useEffect, useRef } from 'react';
-import { Stage, Layer, Rect, Image as KonvaImage } from 'react-konva';
-import useImage from 'use-image';
+import { Stage, Layer, Rect } from 'react-konva';
 import { supabase } from '../lib/supabase';
 import PlayerAvatar from './PlayerAvatar';
 import useWindowSize from '../hooks/useWindowSize';
@@ -31,7 +30,6 @@ const GameCanvas = () => {
   const updateTimeoutRef = useRef(null);
 
   const { width: windowWidth, height: windowHeight } = useWindowSize();
-  const [cafeBgImage] = useImage('/assets/cafe_background.png');
 
   useEffect(() => {
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
@@ -321,7 +319,14 @@ const GameCanvas = () => {
   return ( // GameCanvasコンポーネントは、ゲームキャンバス部分のみをレンダリング
     <div className="h-full w-full flex flex-col bg-gray-900 select-none">
       {/* ゲームエリア */}
-      <div className="flex-grow relative flex items-center justify-center overflow-hidden">
+      <div
+        className="flex-grow relative flex items-center justify-center overflow-hidden"
+        style={{
+          backgroundImage: `url(/assets/cafe_background.png)`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center center',
+        }}
+      >
         {/* メニューボタンをゲームエリアの右上に配置 */}
         <GameMenu />
         {/* isTouchDeviceのチェックをStageの外に移動 */}
@@ -334,12 +339,8 @@ const GameCanvas = () => {
         {/* KonvaのStage自体にスケーリングを適用 */}
         <Stage width={scaledWidth} height={scaledHeight} scaleX={scale} scaleY={scale}>
           <Layer>
-            {cafeBgImage && (
-              <KonvaImage image={cafeBgImage} x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} />
-            )}
-            {!cafeBgImage && (
-              <Rect x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} fill="#6B4226" />
-            )}
+            {/* CSSで背景を表示するため、Konvaの背景は削除。代わりにプレイエリアを示す半透明の矩形を配置 */}
+            <Rect x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} fill="rgba(0, 0, 0, 0.2)" />
 
             {Object.values(otherPlayers).map((player) => (
               <PlayerAvatar key={player.id} player={player} isMe={false} />

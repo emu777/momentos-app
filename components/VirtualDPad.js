@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 
 // モダンな見た目のためのSVGアイコン
 const ChevronUpIcon = () => (
@@ -22,58 +22,62 @@ const ChevronRightIcon = () => (
   </svg>
 );
 
+// ボタンのコンポーネントをVirtualDPadの外に定義し、安定したコンポーネントにする
+const DpadButton = ({ direction, gridArea, icon, isPressed, onTouchStart, onTouchEnd }) => {
+  const style = {
+    gridArea,
+    width: '64px',
+    height: '64px',
+    borderRadius: '50%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    color: 'white',
+    // ガラスのような質感（グラスモーフィズム）
+    backgroundColor: isPressed ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+    backdropFilter: 'blur(5px)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
+    // ユーザー操作に関するスタイル
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    touchAction: 'manipulation',
+    WebkitTapHighlightColor: 'transparent',
+    // 押したときのアニメーション
+    transition: 'background-color 100ms ease-out, transform 100ms ease-out',
+    transform: isPressed ? 'scale(0.95)' : 'scale(1)',
+  };
+
+  return (
+    <div
+      style={style}
+      onTouchStart={(e) => { e.preventDefault(); onTouchStart(direction); }}
+      onTouchEnd={(e) => { e.preventDefault(); onTouchEnd(direction); }}
+      onTouchCancel={(e) => { e.preventDefault(); onTouchEnd(direction); }} // タッチがキャンセルされた場合も考慮
+    >
+      {icon}
+    </div>
+  );
+};
+
 const VirtualDPad = ({ onKeyPress, onKeyRelease }) => {
-  const [pressed, setPressed] = useState(null);
+  // 複数のキーが同時に押されることを想定し、Setで状態を管理する
+  const [pressedKeys, setPressedKeys] = useState(new Set());
 
-  const handleTouchStart = (key) => {
-    setPressed(key);
+  // useCallbackで関数をメモ化し、不要な再生成を防ぐ
+  const handleTouchStart = useCallback((key) => {
+    setPressedKeys(prev => new Set(prev).add(key));
     onKeyPress(key);
-  };
+  }, [onKeyPress]);
 
-  const handleTouchEnd = (key) => {
-    setPressed(null);
+  const handleTouchEnd = useCallback((key) => {
+    setPressedKeys(prev => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
     onKeyRelease(key);
-  };
-
-  // ボタンをコンポーネント化して再利用性と可読性を向上
-  const DpadButton = ({ direction, gridArea, icon }) => {
-    const isPressed = pressed === direction;
-
-    const style = {
-      gridArea,
-      width: '64px',
-      height: '64px',
-      borderRadius: '50%',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      color: 'white',
-      // ガラスのような質感（グラスモーフィズム）
-      backgroundColor: isPressed ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-      backdropFilter: 'blur(5px)',
-      border: '1px solid rgba(255, 255, 255, 0.2)',
-      boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
-      // ユーザー操作に関するスタイル
-      userSelect: 'none',
-      WebkitUserSelect: 'none',
-      touchAction: 'manipulation',
-      WebkitTapHighlightColor: 'transparent',
-      // 押したときのアニメーション
-      transition: 'background-color 100ms ease-out, transform 100ms ease-out',
-      transform: isPressed ? 'scale(0.95)' : 'scale(1)',
-    };
-
-    return (
-      <div
-        style={style}
-        onTouchStart={(e) => { e.preventDefault(); handleTouchStart(direction); }}
-        onTouchEnd={(e) => { e.preventDefault(); handleTouchEnd(direction); }}
-        onTouchCancel={(e) => { e.preventDefault(); handleTouchEnd(direction); }} // タッチがキャンセルされた場合も考慮
-      >
-        {icon}
-      </div>
-    );
-  };
+  }, [onKeyRelease]);
 
   const dpadContainerStyle = {
     position: 'absolute',
@@ -91,10 +95,10 @@ const VirtualDPad = ({ onKeyPress, onKeyRelease }) => {
 
   return (
     <div style={dpadContainerStyle}>
-      <DpadButton direction="ArrowUp" gridArea="up" icon={<ChevronUpIcon />} />
-      <DpadButton direction="ArrowLeft" gridArea="left" icon={<ChevronLeftIcon />} />
-      <DpadButton direction="ArrowRight" gridArea="right" icon={<ChevronRightIcon />} />
-      <DpadButton direction="ArrowDown" gridArea="down" icon={<ChevronDownIcon />} />
+      <DpadButton direction="ArrowUp" gridArea="up" icon={<ChevronUpIcon />} isPressed={pressedKeys.has('ArrowUp')} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} />
+      <DpadButton direction="ArrowLeft" gridArea="left" icon={<ChevronLeftIcon />} isPressed={pressedKeys.has('ArrowLeft')} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} />
+      <DpadButton direction="ArrowRight" gridArea="right" icon={<ChevronRightIcon />} isPressed={pressedKeys.has('ArrowRight')} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} />
+      <DpadButton direction="ArrowDown" gridArea="down" icon={<ChevronDownIcon />} isPressed={pressedKeys.has('ArrowDown')} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} />
     </div>
   );
 };
