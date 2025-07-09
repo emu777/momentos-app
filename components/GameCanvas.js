@@ -321,38 +321,39 @@ const GameCanvas = () => {
   return ( // GameCanvasコンポーネントは、ゲームキャンバス部分のみをレンダリング
     <div className="h-full w-full flex flex-col bg-gray-900 select-none">
       {/* ゲームエリア */}
-      <div
-        className="flex-grow relative flex items-center justify-center overflow-hidden"
+      <div className="flex-grow relative overflow-hidden"
         style={{
           backgroundImage: `url(/assets/cafe_background.png)`,
           backgroundSize: 'cover',
           backgroundPosition: 'center center',
         }}
       >
-        {/* メニューボタンをゲームエリアの右上に配置 */}
+        {/* オーバーレイUI（メニューとジョイスティック） */}
         <GameMenu />
-        {/* isTouchDeviceがtrueの場合、VirtualJoystickをレンダリング */}
         {isTouchDevice ? (
           <VirtualJoystick
             onKeyPress={handleVirtualKeyPress}
             onKeyRelease={handleVirtualKeyRelease}
           />
         ) : null}
-        {/* KonvaのStage自体にスケーリングを適用 */}
-        <Stage width={scaledWidth} height={scaledHeight} scaleX={scale} scaleY={scale}>
-          <Layer>
-            {/* CSSで背景を表示するため、Konvaの背景は削除。代わりにプレイエリアを示す半透明の矩形を配置 */}
-            <Rect x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} fill="rgba(0, 0, 0, 0.2)" />
 
-            {Object.values(otherPlayers).map((player) => (
-              <PlayerAvatar key={player.id} player={player} isMe={false} />
-            ))}
+        {/* ゲームキャンバス（中央に配置） */}
+        <div className="w-full h-full flex items-center justify-center">
+          <Stage width={scaledWidth} height={scaledHeight} scaleX={scale} scaleY={scale}>
+            <Layer>
+              {/* CSSで背景を表示するため、Konvaの背景は削除。代わりにプレイエリアを示す半透明の矩形を配置 */}
+              <Rect x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} fill="rgba(0, 0, 0, 0.2)" />
 
-            {myPlayer && (
-              <PlayerAvatar key={myPlayer.id} player={myPlayer} isMe={true} />
-            )}
-          </Layer>
-        </Stage>
+              {Object.values(otherPlayers).map((player) => (
+                <PlayerAvatar key={player.id} player={player} isMe={false} />
+              ))}
+
+              {myPlayer && (
+                <PlayerAvatar key={myPlayer.id} player={myPlayer} isMe={true} />
+              )}
+            </Layer>
+          </Stage>
+        </div>
       </div>
 
       {/* チャットUI */}

@@ -11,6 +11,7 @@ const VirtualJoystick = ({ onKeyPress, onKeyRelease }) => {
   const activeKeyRef = useRef(null);
 
   const handleTouchStart = (e) => {
+    e.preventDefault();
     const touch = e.changedTouches[0];
     if (!touch) return;
 
@@ -21,6 +22,7 @@ const VirtualJoystick = ({ onKeyPress, onKeyRelease }) => {
   };
 
   const handleTouchMove = useCallback((e) => {
+    e.preventDefault();
     if (!isActive) return;
 
     const touch = e.changedTouches[0];
@@ -62,7 +64,8 @@ const VirtualJoystick = ({ onKeyPress, onKeyRelease }) => {
     }
   }, [isActive, basePos, onKeyPress, onKeyRelease]);
 
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useCallback((e) => {
+    e.preventDefault();
     if (!isActive) return;
     
     setIsActive(false);
