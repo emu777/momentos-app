@@ -17,9 +17,10 @@ const EllipsisVerticalIcon = (props) => ( // 縦の三点リーダーアイコ�
 export default function GameMenu() {
   return (
     <div
-      className="absolute top-4 right-4 text-right z-30"
-      onMouseDown={(e) => e.stopPropagation()}
-      onTouchStart={(e) => e.stopPropagation()}
+      // Tailwindのクラスが正しく適用されない問題への対策として、インラインスタイルで位置を直接指定します。
+      // また、ジョイスティックとの干渉を防ぐためのカスタム属性を追加します。
+      style={{ position: 'absolute', top: '1rem', right: '1rem', zIndex: 30 }}
+      data-no-joystick="true"
     >
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

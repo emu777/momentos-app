@@ -11,8 +11,9 @@ const VirtualJoystick = ({ onKeyPress, onKeyRelease }) => {
   const activeKeyRef = useRef(null);
 
   const handleTouchStart = (e) => {
-     // 他のUI要素（ボタンなど）の上でタッチが開始された場合は、ジョイスティックを有効にしない
-    if (e.target.closest('button')) {
+    // メニューボタンなど、ジョイスティック操作を無効にしたいUI要素の上でタッチが開始された場合は何もしない
+    // これにより、ボタンのクリックが正しく機能します。
+    if (e.target.closest('[data-no-joystick="true"]')) {
       return;
     }
 

@@ -17,6 +17,15 @@ export default function GamePage() {
   // このeffectは、クライアントサイドでセッションがnullになった場合（例：ログアウト時）に
   // ログインページへリダイレクトする役割を担います。
   useEffect(() => {
+    // ゲーム画面ではページのスクロールを完全に無効化する
+    document.body.style.overflow = 'hidden';
+    // コンポーネントがアンマウントされる際にスタイルを元に戻す
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
+
+  useEffect(() => {
     if (!session) {
       router.push('/login');
     }
