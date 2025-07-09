@@ -4,7 +4,7 @@ import { Stage, Layer, Rect } from 'react-konva';
 import { supabase } from '../lib/supabase';
 import PlayerAvatar from './PlayerAvatar';
 import useWindowSize from '../hooks/useWindowSize';
-import VirtualDPad from './VirtualDPad'; // 作成したコンポーネントをインポート
+import VirtualJoystick from './VirtualJoystick'; // 新しいジョイスティックコンポーネントをインポート
 import { useAuth } from '../contexts/AuthContext';
 import GameMenu from './GameMenu'; // メニューコンポーネントをインポート
 import { Input } from './ui/input';
@@ -331,13 +331,13 @@ const GameCanvas = () => {
       >
         {/* メニューボタンをゲームエリアの右上に配置 */}
         <GameMenu />
-        {/* isTouchDeviceのチェックをStageの外に移動 */}
-        {isTouchDevice && (
-          <VirtualDPad
+        {/* isTouchDeviceがtrueの場合、VirtualJoystickをレンダリング */}
+        {isTouchDevice ? (
+          <VirtualJoystick
             onKeyPress={handleVirtualKeyPress}
             onKeyRelease={handleVirtualKeyRelease}
           />
-        )}
+        ) : null}
         {/* KonvaのStage自体にスケーリングを適用 */}
         <Stage width={scaledWidth} height={scaledHeight} scaleX={scale} scaleY={scale}>
           <Layer>
