@@ -7,6 +7,8 @@ import useWindowSize from '../hooks/useWindowSize';
 import VirtualDPad from './VirtualDPad'; // 作成したコンポーネントをインポート
 import { useAuth } from '../contexts/AuthContext';
 import GameMenu from './GameMenu'; // メニューコンポーネントをインポート
+import { Input } from './ui/input';
+import { Button } from './ui/button';
 
 const CAFE_MAP_WIDTH = 800;
 const CAFE_MAP_HEIGHT = 600;
@@ -363,22 +365,17 @@ const GameCanvas = () => {
             </p>
           ))}
         </div>
-        <div className="flex">
-          <input
+        <form className="flex w-full items-center space-x-2" onSubmit={(e) => { e.preventDefault(); handleSendChatMessage(); }}>
+          <Input
             type="text"
-            className="flex-grow p-2 rounded-l-lg border border-gray-700 bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             placeholder="メッセージを入力..."
             value={newChatMessage}
             onChange={(e) => setNewChatMessage(e.target.value)}
-            onKeyPress={(e) => { if (e.key === 'Enter') { handleSendChatMessage(); }}}
           />
-          <button
-            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-r-lg transition duration-200"
-            onClick={handleSendChatMessage}
-          >
+          <Button type="submit">
             送信
-          </button>
-        </div>
+          </Button>
+        </form>
       </div>
     </div>
   );
