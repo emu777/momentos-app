@@ -319,45 +319,34 @@ const GameCanvas = () => {
     <div className="h-full w-full flex flex-col bg-gray-900 select-none">
       {/* ゲームエリア */}
       <div className="flex-grow relative flex items-center justify-center overflow-hidden">
-        {/* スケーリングされたサイズのコンテナ */}
-        <div style={{ width: scaledWidth, height: scaledHeight, position: 'relative' }}>
-          {/* メニューボタン */}
-          <GameMenu />
-          {/* スケールを適用するコンテナ */}
-          <div
-              style={{
-                width: CAFE_MAP_WIDTH,
-                height: CAFE_MAP_HEIGHT,
-                transform: `scale(${scale})`,
-                transformOrigin: 'top left',
-              }}
-            >
-              {isTouchDevice && (
-                <VirtualDPad
-                  onKeyPress={handleVirtualKeyPress}
-                  onKeyRelease={handleVirtualKeyRelease}
-                />
-              )}
-              <Stage width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT}>
-                <Layer>
-                  {cafeBgImage && (
-                    <KonvaImage image={cafeBgImage} x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} />
-                  )}
-                  {!cafeBgImage && (
-                    <Rect x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} fill="#6B4226" />
-                  )}
+        {/* メニューボタンをゲームエリアの右上に配置 */}
+        <GameMenu />
+        {/* isTouchDeviceのチェックをStageの外に移動 */}
+        {isTouchDevice && (
+          <VirtualDPad
+            onKeyPress={handleVirtualKeyPress}
+            onKeyRelease={handleVirtualKeyRelease}
+          />
+        )}
+        {/* KonvaのStage自体にスケーリングを適用 */}
+        <Stage width={scaledWidth} height={scaledHeight} scaleX={scale} scaleY={scale}>
+          <Layer>
+            {cafeBgImage && (
+              <KonvaImage image={cafeBgImage} x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} />
+            )}
+            {!cafeBgImage && (
+              <Rect x={0} y={0} width={CAFE_MAP_WIDTH} height={CAFE_MAP_HEIGHT} fill="#6B4226" />
+            )}
 
-                  {Object.values(otherPlayers).map((player) => (
-                    <PlayerAvatar key={player.id} player={player} isMe={false} />
-                  ))}
+            {Object.values(otherPlayers).map((player) => (
+              <PlayerAvatar key={player.id} player={player} isMe={false} />
+            ))}
 
-                  {myPlayer && (
-                    <PlayerAvatar key={myPlayer.id} player={myPlayer} isMe={true} />
-                  )}
-                </Layer>
-              </Stage>
-            </div>
-          </div>
+            {myPlayer && (
+              <PlayerAvatar key={myPlayer.id} player={myPlayer} isMe={true} />
+            )}
+          </Layer>
+        </Stage>
       </div>
 
       {/* チャットUI */}

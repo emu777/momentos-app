@@ -26,6 +26,7 @@ const VirtualDPad = ({ onKeyPress, onKeyRelease }) => {
     WebkitUserSelect: 'none', // Safari, Chrome
     MozUserSelect: 'none', // Firefox
     msUserSelect: 'none', // IE
+    touchAction: 'manipulation', // ダブルタップズームなどのブラウザ標準のタッチ操作を無効化
     WebkitTapHighlightColor: 'transparent', // タップ時のハイライトを消す
   };
 
